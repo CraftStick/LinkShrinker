@@ -52,9 +52,9 @@ func menuKeyboard(lang string) keyboard {
 	return keyboard{[][]button{
 		{
 			{i18n.Tr(lang, "btn_short"), "m:short", "5222255236332168190"},
-			{i18n.Tr(lang, "btn_ip"), "m:ip", ""},
+			{i18n.Tr(lang, "btn_ip"), "m:ip", "5222258908529207849"},
 		},
-		{{i18n.Tr(lang, "btn_game"), "m:game", ""}},
+		{{i18n.Tr(lang, "btn_game"), "m:game", "5292081728003808363"}},
 	}}
 }
 
