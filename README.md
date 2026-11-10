@@ -1,8 +1,8 @@
-# LinkShrinker
+# Swiss
 
 [English](README.md) · [Русский](README.ru.md)
 
-A minimal URL shortener in Go: an HTTP API and a Telegram bot in a single binary, no database.
+Swiss is a Telegram bot with a pocket set of tools in Go: URL shortener (with an HTTP API), IP and domain lookup with a map pin and WHOIS. A single binary, no database. More tools are coming.
 
 ## Features
 
