@@ -74,6 +74,7 @@ internal/shorten/    URL shortener: storage, HTTP API, redirects
 internal/ipinfo/     IP and domain lookup, formatting, map pin
 internal/whois/      RDAP and WHOIS client
 internal/i18n/       en/ru texts and formatting helpers
+internal/game/       Dino game: HTML widget (Bot API 10.4 sendWidget), private chats only
 internal/bot/        Telegram bot: commands, button menu, inline mode
 ```
 

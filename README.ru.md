@@ -74,6 +74,7 @@ internal/shorten/    сокращатель ссылок: хранилище, HT
 internal/ipinfo/     поиск по IP и домену, форматирование, точка на карте
 internal/whois/      клиент RDAP и WHOIS
 internal/i18n/       тексты en/ru и вспомогательные функции
+internal/game/       игра «Динозаврик»: HTML-виджет (Bot API 10.4 sendWidget), только личный чат
 internal/bot/        Telegram-бот: команды, меню с кнопками, инлайн-режим
 ```
 

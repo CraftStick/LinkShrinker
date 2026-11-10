@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"log"
+	"shortener/internal/game"
 	"shortener/internal/i18n"
 	"shortener/internal/ipinfo"
 	"shortener/internal/shorten"
@@ -40,6 +42,7 @@ func menuKeyboard(lang string) tgbotapi.InlineKeyboardMarkup {
 			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_ip"), "m:ip"),
 		),
 		tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_game"), "m:game"),
 			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_help"), "m:help"),
 		),
 	)
@@ -83,6 +86,14 @@ func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 	case "m:ip":
 		setMode(chatID, "ip")
 		editMenu(bot, q.Message, i18n.Tr(lang, "ask_ip"), cancelKeyboard(lang))
+	case "m:game":
+		if q.Message.Chat.Type != "private" {
+			sendHTML(bot, chatID, 0, i18n.Tr(lang, "game_private"))
+			return
+		}
+		if err := game.Send(bot, chatID, i18n.Tr(lang, "game_caption")); err != nil {
+			log.Printf("game: %v", err)
+		}
 	case "m:help":
 		editMenu(bot, q.Message, i18n.Tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
 	case "m:cancel":
