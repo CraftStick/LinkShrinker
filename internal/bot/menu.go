@@ -43,7 +43,6 @@ func menuKeyboard(lang string) tgbotapi.InlineKeyboardMarkup {
 		),
 		tgbotapi.NewInlineKeyboardRow(
 			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_game"), "m:game"),
-			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_help"), "m:help"),
 		),
 	)
 }
@@ -94,8 +93,6 @@ func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 		if err := game.Send(bot, chatID, i18n.Tr(lang, "game_caption")); err != nil {
 			log.Printf("game: %v", err)
 		}
-	case "m:help":
-		editMenu(bot, q.Message, i18n.Tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
 	case "m:cancel":
 		setMode(chatID, "")
 		editMenu(bot, q.Message, i18n.Tr(lang, "menu"), menuKeyboard(lang))
