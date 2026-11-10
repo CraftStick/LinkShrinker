@@ -59,6 +59,13 @@ func sendWithMarkup(bot *tgbotapi.BotAPI, chatID int64, text string, markup inte
 	bot.Send(msg)
 }
 
+func editMenu(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, text string, markup tgbotapi.InlineKeyboardMarkup) {
+	e := tgbotapi.NewEditMessageTextAndMarkup(msg.Chat.ID, msg.MessageID, text, markup)
+	e.ParseMode = tgbotapi.ModeHTML
+	e.DisableWebPagePreview = true
+	bot.Request(e)
+}
+
 func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 	bot.Request(tgbotapi.NewCallback(q.ID, ""))
 	if q.Message == nil {
@@ -72,15 +79,15 @@ func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 			return
 		}
 		setMode(chatID, "short")
-		sendWithMarkup(bot, chatID, i18n.Tr(lang, "ask_url"), cancelKeyboard(lang))
+		editMenu(bot, q.Message, i18n.Tr(lang, "ask_url"), cancelKeyboard(lang))
 	case "m:ip":
 		setMode(chatID, "ip")
-		sendWithMarkup(bot, chatID, i18n.Tr(lang, "ask_ip"), cancelKeyboard(lang))
+		editMenu(bot, q.Message, i18n.Tr(lang, "ask_ip"), cancelKeyboard(lang))
 	case "m:help":
-		sendWithMarkup(bot, chatID, i18n.Tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
+		editMenu(bot, q.Message, i18n.Tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
 	case "m:cancel":
 		setMode(chatID, "")
-		sendHTML(bot, chatID, 0, i18n.Tr(lang, "cancelled"))
+		editMenu(bot, q.Message, i18n.Tr(lang, "menu"), menuKeyboard(lang))
 	}
 }
 
