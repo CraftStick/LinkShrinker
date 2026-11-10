@@ -17,13 +17,13 @@ const (
 
 func HTML() string { return dino }
 
-func Send(bot *tgbotapi.BotAPI, chatID int64, caption string) error {
+func Send(bot *tgbotapi.BotAPI, chatID int64, markup string) error {
 	_, err := bot.MakeRequest("sendWidget", tgbotapi.Params{
-		"chat_id": strconv.FormatInt(chatID, 10),
-		"html":    dino,
-		"caption": caption,
-		"width":   strconv.Itoa(width),
-		"height":  strconv.Itoa(height),
+		"chat_id":      strconv.FormatInt(chatID, 10),
+		"html":         dino,
+		"reply_markup": markup,
+		"width":        strconv.Itoa(width),
+		"height":       strconv.Itoa(height),
 	})
 	return err
 }

@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"encoding/json"
 	"log"
 	"shortener/internal/game"
 	"shortener/internal/i18n"
@@ -90,9 +91,16 @@ func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 			sendHTML(bot, chatID, 0, i18n.Tr(lang, "game_private"))
 			return
 		}
-		if err := game.Send(bot, chatID, i18n.Tr(lang, "game_caption")); err != nil {
+		kb, _ := json.Marshal(tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
+			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_cancel"), "g:back"))))
+		if err := game.Send(bot, chatID, string(kb)); err != nil {
 			log.Printf("game: %v", err)
+			return
 		}
+		bot.Request(tgbotapi.NewDeleteMessage(chatID, q.Message.MessageID))
+	case "g:back":
+		sendWithMarkup(bot, chatID, i18n.Tr(lang, "menu"), menuKeyboard(lang))
+		bot.Request(tgbotapi.NewDeleteMessage(chatID, q.Message.MessageID))
 	case "m:cancel":
 		setMode(chatID, "")
 		editMenu(bot, q.Message, i18n.Tr(lang, "menu"), menuKeyboard(lang))
