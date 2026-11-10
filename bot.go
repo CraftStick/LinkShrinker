@@ -36,11 +36,12 @@ func handleStart(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 	}
 	lang := langOf(m.From.LanguageCode)
 	text := tr(lang, "start", "name", html.EscapeString(m.From.FirstName), "bot", botUsername(bot))
-	sendHTML(bot, m.Chat.ID, 0, text)
+	sendWithMarkup(bot, m.Chat.ID, text, menuKeyboard(lang))
 }
 
 func handleHelp(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
-	sendHTML(bot, m.Chat.ID, 0, tr(langOf(m.From.LanguageCode), "help", "bot", botUsername(bot)))
+	lang := langOf(m.From.LanguageCode)
+	sendWithMarkup(bot, m.Chat.ID, tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
 }
 
 func handleIP(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
@@ -50,6 +51,10 @@ func handleIP(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 		sendHTML(bot, m.Chat.ID, m.MessageID, tr(lang, "need_address"))
 		return
 	}
+	replyLookup(bot, m, lang, args)
+}
+
+func replyLookup(bot *tgbotapi.BotAPI, m *tgbotapi.Message, lang, args string) {
 	query := normalizeQuery(args)
 	if query == "" {
 		sendHTML(bot, m.Chat.ID, m.MessageID, tr(lang, "invalid_input"))

@@ -65,6 +65,16 @@ var texts = map[string]map[string]string{
 		"cmd_ip":           "Look up an IP address or domain",
 		"cmd_help":         "How to use the bot",
 		"cmd_start":        "Welcome message",
+		"btn_short":        "🔗 Shorten a link",
+		"btn_ip":           "🌐 IP / domain",
+		"btn_help":         "❓ Help",
+		"btn_cancel":       "✖️ Cancel",
+		"menu":             "What do you want to do? Pick an action or just send a link, an IP or a domain.",
+		"ask_url":          "Send the link to shorten.",
+		"ask_ip":           "Send an IP address or a domain.\nExamples: {examples}",
+		"short_result":     "🔗 Short link:\n{url}",
+		"short_denied":     "⛔ Link shortening is not available to you. IP and domain lookup works for everyone.",
+		"cancelled":        "Cancelled.",
 	},
 	"ru": {
 		"start": waveEmoji + " Привет, {name}!\n\nОтправь ссылку, и я её сократю, или используй /ip с <b>IP-адресом</b> или <b>доменом</b>, и я покажу, где он находится, кто провайдер и многое другое.\n\nПримеры: {examples}\n\n" +
@@ -118,6 +128,16 @@ var texts = map[string]map[string]string{
 		"cmd_ip":           "Найти IP-адрес или домен",
 		"cmd_help":         "Как пользоваться ботом",
 		"cmd_start":        "Приветствие",
+		"btn_short":        "🔗 Сократить ссылку",
+		"btn_ip":           "🌐 IP / домен",
+		"btn_help":         "❓ Справка",
+		"btn_cancel":       "✖️ Отмена",
+		"menu":             "Что сделать? Выбери действие или просто отправь ссылку, IP или домен.",
+		"ask_url":          "Отправь ссылку, которую нужно сократить.",
+		"ask_ip":           "Отправь IP-адрес или домен.\nПримеры: {examples}",
+		"short_result":     "🔗 Короткая ссылка:\n{url}",
+		"short_denied":     "⛔ Сокращение ссылок тебе недоступно. Поиск по IP и домену работает для всех.",
+		"cancelled":        "Отменено.",
 	},
 }
 

@@ -65,6 +65,10 @@ func startBot() {
 			go handleInline(bot, update.InlineQuery)
 			continue
 		}
+		if update.CallbackQuery != nil {
+			go handleCallback(bot, update.CallbackQuery)
+			continue
+		}
 		m := update.Message
 		if m == nil || m.Text == "" || m.From == nil {
 			continue
@@ -81,24 +85,7 @@ func startBot() {
 			continue
 		}
 
-		if !allowedUsers[m.From.ID] || m.Chat.Type != "private" {
-			continue
-		}
-
-		originalURL := strings.TrimSpace(m.Text)
-		if !strings.HasPrefix(originalURL, "http://") && !strings.HasPrefix(originalURL, "https://") {
-			originalURL = "http://" + originalURL
-		}
-
-		id := generateID(6)
-		store.Lock()
-		store.urls[id] = originalURL
-		store.Unlock()
-
-		shortURL := fmt.Sprintf("%s/%s", domain, id)
-		msg := tgbotapi.NewMessage(m.Chat.ID, "🔗 Короткая ссылка:\n"+shortURL)
-		msg.DisableWebPagePreview = true
-		bot.Send(msg)
+		go handleText(bot, m)
 	}
 }
 

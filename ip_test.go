@@ -128,3 +128,14 @@ func TestFormatHelpers(t *testing.T) {
 		t.Error(got)
 	}
 }
+
+func TestShortenURL(t *testing.T) {
+	u := shortenURL("example.com")
+	id := u[len(domain)+1:]
+	store.RLock()
+	got := store.urls[id]
+	store.RUnlock()
+	if got != "http://example.com" {
+		t.Fatalf("got %q", got)
+	}
+}
