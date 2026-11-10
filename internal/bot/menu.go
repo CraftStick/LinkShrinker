@@ -2,6 +2,7 @@ package bot
 
 import (
 	"encoding/json"
+	"html"
 	"log"
 	"shortener/internal/game"
 	"shortener/internal/i18n"
@@ -99,11 +100,11 @@ func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 		}
 		bot.Request(tgbotapi.NewDeleteMessage(chatID, q.Message.MessageID))
 	case "g:back":
-		sendWithMarkup(bot, chatID, i18n.Tr(lang, "menu"), menuKeyboard(lang))
+		sendWithMarkup(bot, chatID, startText(bot, q.From, lang), menuKeyboard(lang))
 		bot.Request(tgbotapi.NewDeleteMessage(chatID, q.Message.MessageID))
 	case "m:cancel":
 		setMode(chatID, "")
-		editMenu(bot, q.Message, i18n.Tr(lang, "menu"), menuKeyboard(lang))
+		editMenu(bot, q.Message, startText(bot, q.From, lang), menuKeyboard(lang))
 	}
 }
 
@@ -136,4 +137,8 @@ func handleText(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 	default:
 		sendWithMarkup(bot, m.Chat.ID, i18n.Tr(lang, "menu"), menuKeyboard(lang))
 	}
+}
+
+func startText(bot *tgbotapi.BotAPI, u *tgbotapi.User, lang string) string {
+	return i18n.Tr(lang, "start", "name", html.EscapeString(u.FirstName), "bot", botUsername(bot))
 }

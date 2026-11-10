@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"html"
 	"log"
 	"shortener/internal/i18n"
 	"shortener/internal/ipinfo"
@@ -37,8 +36,7 @@ func handleStart(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 		return
 	}
 	lang := i18n.LangOf(m.From.LanguageCode)
-	text := i18n.Tr(lang, "start", "name", html.EscapeString(m.From.FirstName), "bot", botUsername(bot))
-	sendWithMarkup(bot, m.Chat.ID, text, menuKeyboard(lang))
+	sendWithMarkup(bot, m.Chat.ID, startText(bot, m.From, lang), menuKeyboard(lang))
 }
 
 func handleHelp(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
