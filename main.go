@@ -58,23 +58,34 @@ func startBot() {
 
 	updates := bot.GetUpdatesChan(u)
 
+	setupCommands(bot)
+
 	for update := range updates {
-		if update.Message == nil || update.Message.Text == "" {
+		if update.InlineQuery != nil {
+			go handleInline(bot, update.InlineQuery)
+			continue
+		}
+		m := update.Message
+		if m == nil || m.Text == "" || m.From == nil {
+			continue
+		}
+		if m.IsCommand() {
+			switch m.Command() {
+			case "ip", "info":
+				go handleIP(bot, m)
+			case "start":
+				go handleStart(bot, m)
+			case "help":
+				go handleHelp(bot, m)
+			}
 			continue
 		}
 
-		if !allowedUsers[update.Message.From.ID] {
-			log.Printf("Блокировка доступа: %s (ID: %d)", update.Message.From.UserName, update.Message.From.ID)
+		if !allowedUsers[m.From.ID] || m.Chat.Type != "private" {
 			continue
 		}
 
-		if update.Message.Text == "/start" {
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, "Отправь мне любую ссылку, и я её сокращу.")
-			bot.Send(msg)
-			continue
-		}
-
-		originalURL := strings.TrimSpace(update.Message.Text)
+		originalURL := strings.TrimSpace(m.Text)
 		if !strings.HasPrefix(originalURL, "http://") && !strings.HasPrefix(originalURL, "https://") {
 			originalURL = "http://" + originalURL
 		}
@@ -85,7 +96,7 @@ func startBot() {
 		store.Unlock()
 
 		shortURL := fmt.Sprintf("%s/%s", domain, id)
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "🔗 Короткая ссылка:\n"+shortURL)
+		msg := tgbotapi.NewMessage(m.Chat.ID, "🔗 Короткая ссылка:\n"+shortURL)
 		msg.DisableWebPagePreview = true
 		bot.Send(msg)
 	}

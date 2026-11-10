@@ -9,8 +9,9 @@ A minimal URL shortener in Go: an HTTP API and a Telegram bot in a single binary
 - Shorten links through the HTTP API (`POST /shorten`) or the Telegram bot
 - Short links redirect with `301`
 - 6-character IDs from a cryptographically secure random source (`crypto/rand`)
-- The bot answers only the users on its allow-list
-- One dependency: [telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api)
+- Only users on the allow-list can shorten links in the bot
+- IP and domain lookup in the bot (`/ip`, `/info`) and in inline mode, open to everyone: map pin, country with flag, region, city, ZIP, timezone with local time, ISP, organization, AS, hostname, mobile flag, domain WHOIS (registrar, dates, expiry warning), English and Russian
+- Dependencies: [telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api), `golang.org/x/net` (IDN)
 
 ## Getting Started
 
@@ -53,7 +54,23 @@ A URL without `http://` or `https://` gets `http://` added.
 
 ## Telegram bot
 
-Send `/start`, then send any link, and the bot replies with the short one.
+Send `/start`, then send any link, and the bot replies with the short one (allow-listed users only).
+
+Lookup is open to everyone:
+
+- `/ip <address>` or `/info <address>`: IP, domain or link, IDN domains included
+- Inline: type `@your_bot 8.8.8.8` in any chat and pick the card or the map pin
+- Geolocation: [ip-api.com](https://ip-api.com) (45 requests/minute, quota tracked from its headers; 10 are kept for chat messages), with [ipwho.is](https://ipwho.is) as a backup
+- Domains: RDAP (IANA bootstrap) with a WHOIS port 43 fallback, so `.ru`, `.рф` and other ccTLDs work
+- Results are cached (5 minutes for geolocation, 1 hour for WHOIS)
+
+Based on [IPBot-telegram](https://github.com/CraftStick/IPBot-telegram).
+
+## Test
+
+```bash
+go test ./...
+```
 
 ## Build
 
