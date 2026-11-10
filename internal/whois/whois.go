@@ -23,7 +23,6 @@ const (
 	serverRetryAfter = 10 * time.Minute
 )
 
-// whois.tcinet.ru does not answer from some networks; RU-CENTER knows only its own domains.
 var whoisFallbackServers = map[string][]string{
 	"ru": {"whois.nic.ru"}, "su": {"whois.nic.ru"}, "xn--p1ai": {"whois.nic.ru"},
 }
@@ -64,8 +63,6 @@ func parseDate(value string) time.Time {
 	}
 	return time.Time{}
 }
-
-// ---------- RDAP ----------
 
 var (
 	rdapMu      sync.Mutex
@@ -172,7 +169,6 @@ func parseRDAP(data map[string]any, domain string) *Info {
 	return info
 }
 
-// rdapLookup returns nil, nil when the domain is not registered there.
 func rdapLookup(server, domain string) (*Info, error) {
 	var data map[string]any
 	err := getJSON(server+"domain/"+domain, map[string]string{"accept": "application/rdap+json"}, &data)
@@ -184,8 +180,6 @@ func rdapLookup(server, domain string) (*Info, error) {
 	}
 	return parseRDAP(data, domain), nil
 }
-
-// ---------- WHOIS ----------
 
 func whoisQuery(server, query string) (string, error) {
 	conn, err := net.DialTimeout("tcp", net.JoinHostPort(server, "43"), whoisTimeout)
@@ -231,7 +225,6 @@ func whoisServer(tld string) (string, error) {
 	return s, nil
 }
 
-// parseWhois reads flat "Key: value" lines and indented blocks ("Registrar:" then "    Name: X").
 func parseWhois(text, domain string) *Info {
 	values := map[string]string{}
 	section := ""
@@ -300,8 +293,6 @@ func whoisLookup(domain, tld string) (*Info, error) {
 	return nil, lastErr
 }
 
-// ---------- lookup ----------
-
 type whoisCacheEntry struct {
 	at   time.Time
 	info *Info
@@ -312,7 +303,6 @@ var (
 	whoisCache   = map[string]whoisCacheEntry{}
 )
 
-// Lookup returns registration data of a domain or its parent; nil when unknown. Network errors are not cached.
 func Lookup(domain string) *Info {
 	whoisCacheMu.Lock()
 	c, ok := whoisCache[domain]

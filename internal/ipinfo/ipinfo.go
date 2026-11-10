@@ -82,9 +82,6 @@ type Info struct {
 
 func (i *Info) HasCoords() bool { return i.Lat != nil && i.Lon != nil }
 
-// ---------- query parsing ----------
-
-// NormalizeQuery extracts an IP or an ASCII (punycode) domain from free text; "" if there is none.
 func NormalizeQuery(text string) string {
 	q := strings.TrimSpace(text)
 	if q == "" {
@@ -162,7 +159,6 @@ func inReserved(ip net.IP) bool {
 	return false
 }
 
-// resolve returns the first IPv4 (or else IPv6) address of a domain.
 func resolve(domain string) (string, error) {
 	ips, err := net.LookupIP(domain)
 	if err != nil || len(ips) == 0 {
@@ -176,8 +172,6 @@ func resolve(domain string) (string, error) {
 	return ips[0].String(), nil
 }
 
-// ---------- quotas ----------
-
 type quota struct {
 	mu        sync.Mutex
 	known     bool
@@ -185,7 +179,6 @@ type quota struct {
 	resetAt   time.Time
 }
 
-// take counts one request; false if it would leave fewer than reserve requests.
 func (q *quota) take(reserve int) bool {
 	q.mu.Lock()
 	defer q.mu.Unlock()
@@ -206,8 +199,6 @@ func (q *quota) update(remaining int, resetIn time.Duration) {
 }
 
 var ipapiQuota, fallbackQuota quota
-
-// ---------- API calls ----------
 
 func ipapiLookup(query, lang string, reserve int) (*Info, error) {
 	if !ipapiQuota.take(reserve) {
@@ -251,7 +242,6 @@ func ipapiLookup(query, lang string, reserve int) (*Info, error) {
 	return &info, nil
 }
 
-// fallbackLookup asks ipwho.is and converts the answer to ip-api's fields.
 func fallbackLookup(query, lang string) (*Info, error) {
 	ip := query
 	if !isIP(query) {
@@ -317,8 +307,6 @@ func fallbackLookup(query, lang string) (*Info, error) {
 	return info, nil
 }
 
-// ---------- cache ----------
-
 type cacheEntry struct {
 	at   time.Time
 	info *Info
@@ -329,7 +317,6 @@ var (
 	cache   = map[[2]string]cacheEntry{}
 )
 
-// getIPInfo asks ip-api.com and, when it is down or out of requests, ipwho.is. Results are cached.
 func getIPInfo(query, lang string, reserve int) (*Info, error) {
 	if isIP(query) {
 		if err := checkPublic(query); err != nil {
@@ -373,7 +360,6 @@ func getIPInfo(query, lang string, reserve int) (*Info, error) {
 	return info, nil
 }
 
-// lookup returns geolocation and, for domains, WHOIS data fetched in parallel.
 func Lookup(query, lang string, reserve int) (*Info, *whois.Info, error) {
 	var whoisCh chan *whois.Info
 	if !isIP(query) {
@@ -395,8 +381,6 @@ func Lookup(query, lang string, reserve int) (*Info, *whois.Info, error) {
 	return info, wi, nil
 }
 
-// ---------- formatting ----------
-
 func Flag(cc string) string {
 	if len(cc) != 2 {
 		return "🏳️"
@@ -405,7 +389,6 @@ func Flag(cc string) string {
 	return string([]rune{rune(cc[0]) - 'A' + 0x1F1E6, rune(cc[1]) - 'A' + 0x1F1E6})
 }
 
-// FormatPlace joins non-empty, non-repeating parts (Moscow, Moscow).
 func FormatPlace(i *Info, withRegion bool) string {
 	parts := []string{i.City, i.Country}
 	if withRegion {
@@ -566,7 +549,6 @@ func Format(i *Info, query, lang string, w *whois.Info) string {
 	return b.String()
 }
 
-// VenueTexts returns the map pin title and address.
 func VenueTexts(i *Info) (title, address string) {
 	title = FormatPlace(i, true)
 	if title == "" {

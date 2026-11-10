@@ -155,7 +155,6 @@ func LangOf(code string) string {
 	return DefaultLang
 }
 
-// tr fills {key} placeholders; {examples} is always available.
 func Tr(lang, key string, params ...string) string {
 	text := texts[lang][key]
 	if text == "" {

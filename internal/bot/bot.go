@@ -132,14 +132,11 @@ func Start(botToken string) {
 	}
 }
 
-// ---------- inline mode ----------
-
 var (
 	latestInlineMu sync.Mutex
 	latestInline   = map[int64]string{}
 )
 
-// typingPaused waits a moment; false if the user typed on and a newer query replaced this one.
 func typingPaused(q *tgbotapi.InlineQuery) bool {
 	latestInlineMu.Lock()
 	latestInline[q.From.ID] = q.ID
