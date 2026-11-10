@@ -15,8 +15,6 @@ const (
 	height = 150
 )
 
-func HTML() string { return dino }
-
 func Send(bot *tgbotapi.BotAPI, chatID int64, markup string) error {
 	_, err := bot.MakeRequest("sendWidget", tgbotapi.Params{
 		"chat_id":      strconv.FormatInt(chatID, 10),

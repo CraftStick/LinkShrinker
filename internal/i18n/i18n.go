@@ -75,7 +75,6 @@ var texts = map[string]map[string]string{
 		"ask_ip":           "Send an IP address or a domain.\nExamples: {examples}",
 		"short_result":     "🔗 Short link:\n{url}",
 		"short_denied":     "⛔ Link shortening is not available to you. IP and domain lookup works for everyone.",
-		"cancelled":        "Cancelled.",
 	},
 	"ru": {
 		"start": waveEmoji + " Привет, {name}!\n\nЯ набор полезных штук: сокращаю ссылки, ищу <b>IP-адрес</b> или <b>домен</b> (где находится, кто провайдер и многое другое) и есть небольшая игра, чтобы скоротать время. Выбери действие ниже или просто отправь ссылку, IP или домен.\n\nПримеры: {examples}\n\n" +
@@ -139,7 +138,6 @@ var texts = map[string]map[string]string{
 		"ask_ip":           "Отправь IP-адрес или домен.\nПримеры: {examples}",
 		"short_result":     "🔗 Короткая ссылка:\n{url}",
 		"short_denied":     "⛔ Сокращение ссылок тебе недоступно. Поиск по IP и домену работает для всех.",
-		"cancelled":        "Отменено.",
 	},
 }
 

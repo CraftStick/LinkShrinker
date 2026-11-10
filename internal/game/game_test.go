@@ -7,7 +7,7 @@ import (
 )
 
 func TestWidgetLimits(t *testing.T) {
-	h := HTML()
+	h := dino
 	if len(h) > 32768 {
 		t.Fatalf("html is %d bytes, limit 32768", len(h))
 	}
