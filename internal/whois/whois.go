@@ -1,4 +1,4 @@
-package main
+package whois
 
 import (
 	"encoding/json"
@@ -39,7 +39,7 @@ var dateLayouts = []string{time.RFC3339, "2006-01-02T15:04:05", "2006-01-02 15:0
 
 var whoisHTTP = &http.Client{Timeout: whoisTimeout}
 
-type domainInfo struct {
+type Info struct {
 	Domain    string
 	Registrar string
 	Created   time.Time
@@ -128,7 +128,7 @@ func getJSON(url string, headers map[string]string, out any) error {
 	return json.NewDecoder(io.LimitReader(resp.Body, 5<<20)).Decode(out)
 }
 
-func parseRDAP(data map[string]any, domain string) *domainInfo {
+func parseRDAP(data map[string]any, domain string) *Info {
 	events := map[string]string{}
 	if list, ok := data["events"].([]any); ok {
 		for _, e := range list {
@@ -139,7 +139,7 @@ func parseRDAP(data map[string]any, domain string) *domainInfo {
 			}
 		}
 	}
-	info := &domainInfo{Domain: domain, Created: parseDate(events["registration"]), Expires: parseDate(events["expiration"])}
+	info := &Info{Domain: domain, Created: parseDate(events["registration"]), Expires: parseDate(events["expiration"])}
 	if n, _ := data["ldhName"].(string); n != "" {
 		info.Domain = strings.ToLower(n)
 	}
@@ -173,7 +173,7 @@ func parseRDAP(data map[string]any, domain string) *domainInfo {
 }
 
 // rdapLookup returns nil, nil when the domain is not registered there.
-func rdapLookup(server, domain string) (*domainInfo, error) {
+func rdapLookup(server, domain string) (*Info, error) {
 	var data map[string]any
 	err := getJSON(server+"domain/"+domain, map[string]string{"accept": "application/rdap+json"}, &data)
 	if s, ok := err.(httpStatusError); ok && s == http.StatusNotFound {
@@ -232,7 +232,7 @@ func whoisServer(tld string) (string, error) {
 }
 
 // parseWhois reads flat "Key: value" lines and indented blocks ("Registrar:" then "    Name: X").
-func parseWhois(text, domain string) *domainInfo {
+func parseWhois(text, domain string) *Info {
 	values := map[string]string{}
 	section := ""
 	for _, line := range strings.Split(text, "\n") {
@@ -266,10 +266,10 @@ func parseWhois(text, domain string) *domainInfo {
 	if len(values) == 0 {
 		return nil
 	}
-	return &domainInfo{Domain: domain, Registrar: values["registrar"], Created: parseDate(values["created"]), Expires: parseDate(values["expires"])}
+	return &Info{Domain: domain, Registrar: values["registrar"], Created: parseDate(values["created"]), Expires: parseDate(values["expires"])}
 }
 
-func whoisLookup(domain, tld string) (*domainInfo, error) {
+func whoisLookup(domain, tld string) (*Info, error) {
 	var lastErr error
 	var servers []string
 	if s, err := whoisServer(tld); err != nil {
@@ -304,7 +304,7 @@ func whoisLookup(domain, tld string) (*domainInfo, error) {
 
 type whoisCacheEntry struct {
 	at   time.Time
-	info *domainInfo
+	info *Info
 }
 
 var (
@@ -312,8 +312,8 @@ var (
 	whoisCache   = map[string]whoisCacheEntry{}
 )
 
-// lookupDomain returns registration data of a domain or its parent; nil when unknown. Network errors are not cached.
-func lookupDomain(domain string) *domainInfo {
+// Lookup returns registration data of a domain or its parent; nil when unknown. Network errors are not cached.
+func Lookup(domain string) *Info {
 	whoisCacheMu.Lock()
 	c, ok := whoisCache[domain]
 	whoisCacheMu.Unlock()
@@ -322,7 +322,7 @@ func lookupDomain(domain string) *domainInfo {
 	}
 	labels := strings.Split(strings.ToLower(domain), ".")
 	tld := labels[len(labels)-1]
-	var result *domainInfo
+	var result *Info
 	var failed bool
 	server := getRDAPServers()[tld]
 	for i := max(0, len(labels)-maxLevels); i < len(labels)-1; i++ {

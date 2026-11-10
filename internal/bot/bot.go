@@ -1,8 +1,10 @@
-package main
+package bot
 
 import (
 	"html"
 	"log"
+	"shortener/internal/i18n"
+	"shortener/internal/ipinfo"
 	"strings"
 	"sync"
 	"time"
@@ -34,40 +36,40 @@ func handleStart(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 		handleHelp(bot, m)
 		return
 	}
-	lang := langOf(m.From.LanguageCode)
-	text := tr(lang, "start", "name", html.EscapeString(m.From.FirstName), "bot", botUsername(bot))
+	lang := i18n.LangOf(m.From.LanguageCode)
+	text := i18n.Tr(lang, "start", "name", html.EscapeString(m.From.FirstName), "bot", botUsername(bot))
 	sendWithMarkup(bot, m.Chat.ID, text, menuKeyboard(lang))
 }
 
 func handleHelp(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
-	lang := langOf(m.From.LanguageCode)
-	sendWithMarkup(bot, m.Chat.ID, tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
+	lang := i18n.LangOf(m.From.LanguageCode)
+	sendWithMarkup(bot, m.Chat.ID, i18n.Tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
 }
 
 func handleIP(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
-	lang := langOf(m.From.LanguageCode)
+	lang := i18n.LangOf(m.From.LanguageCode)
 	args := strings.TrimSpace(m.CommandArguments())
 	if args == "" {
-		sendHTML(bot, m.Chat.ID, m.MessageID, tr(lang, "need_address"))
+		sendHTML(bot, m.Chat.ID, m.MessageID, i18n.Tr(lang, "need_address"))
 		return
 	}
 	replyLookup(bot, m, lang, args)
 }
 
 func replyLookup(bot *tgbotapi.BotAPI, m *tgbotapi.Message, lang, args string) {
-	query := normalizeQuery(args)
+	query := ipinfo.NormalizeQuery(args)
 	if query == "" {
-		sendHTML(bot, m.Chat.ID, m.MessageID, tr(lang, "invalid_input"))
+		sendHTML(bot, m.Chat.ID, m.MessageID, i18n.Tr(lang, "invalid_input"))
 		return
 	}
-	info, whois, err := lookup(query, lang, 0)
+	info, whois, err := ipinfo.Lookup(query, lang, 0)
 	if err != nil {
-		sendHTML(bot, m.Chat.ID, m.MessageID, "❌ "+err.(*lookupErr).text(lang))
+		sendHTML(bot, m.Chat.ID, m.MessageID, "❌ "+err.(*ipinfo.LookupErr).Text(lang))
 		return
 	}
-	card := formatIPInfo(info, query, lang, whois)
-	if info.hasCoords() {
-		title, address := venueTexts(info)
+	card := ipinfo.Format(info, query, lang, whois)
+	if info.HasCoords() {
+		title, address := ipinfo.VenueTexts(info)
 		venue := tgbotapi.NewVenue(m.Chat.ID, title, address, *info.Lat, *info.Lon)
 		venue.ReplyToMessageID = m.MessageID
 		if _, err := bot.Send(venue); err != nil {
@@ -78,6 +80,55 @@ func replyLookup(bot *tgbotapi.BotAPI, m *tgbotapi.Message, lang, args string) {
 		}
 	}
 	sendHTML(bot, m.Chat.ID, m.MessageID, card)
+}
+
+var allowedUsers = map[int64]bool{
+	6196125778: true,
+}
+
+func Start(botToken string) {
+	bot, err := tgbotapi.NewBotAPI(botToken)
+	if err != nil {
+		log.Fatalf("Ошибка подключения бота: %v", err)
+	}
+
+	bot.Debug = false
+	log.Printf("Бот авторизован как %s", bot.Self.UserName)
+
+	u := tgbotapi.NewUpdate(0)
+	u.Timeout = 60
+
+	updates := bot.GetUpdatesChan(u)
+
+	setupCommands(bot)
+
+	for update := range updates {
+		if update.InlineQuery != nil {
+			go handleInline(bot, update.InlineQuery)
+			continue
+		}
+		if update.CallbackQuery != nil {
+			go handleCallback(bot, update.CallbackQuery)
+			continue
+		}
+		m := update.Message
+		if m == nil || m.Text == "" || m.From == nil {
+			continue
+		}
+		if m.IsCommand() {
+			switch m.Command() {
+			case "ip", "info":
+				go handleIP(bot, m)
+			case "start":
+				go handleStart(bot, m)
+			case "help":
+				go handleHelp(bot, m)
+			}
+			continue
+		}
+
+		go handleText(bot, m)
+	}
 }
 
 // ---------- inline mode ----------
@@ -103,29 +154,29 @@ func typingPaused(q *tgbotapi.InlineQuery) bool {
 }
 
 func handleInline(bot *tgbotapi.BotAPI, q *tgbotapi.InlineQuery) {
-	lang := langOf(q.From.LanguageCode)
+	lang := i18n.LangOf(q.From.LanguageCode)
 	var results []any
-	if query := normalizeQuery(q.Query); query != "" {
+	if query := ipinfo.NormalizeQuery(q.Query); query != "" {
 		if !typingPaused(q) {
 			return
 		}
-		if info, whois, err := lookup(query, lang, apiReserve); err == nil {
+		if info, whois, err := ipinfo.Lookup(query, lang, ipinfo.APIReserve); err == nil {
 			var parts []string
-			for _, p := range []string{formatPlace(info, false), info.Isp} {
+			for _, p := range []string{ipinfo.FormatPlace(info, false), info.Isp} {
 				if p != "" {
 					parts = append(parts, p)
 				}
 			}
 			results = append(results, map[string]any{
 				"type": "article", "id": "info",
-				"title":       flag(info.CountryCode) + " " + info.Query,
+				"title":       ipinfo.Flag(info.CountryCode) + " " + info.Query,
 				"description": strings.Join(parts, " · "),
 				"input_message_content": tgbotapi.InputTextMessageContent{
-					Text: formatIPInfo(info, query, lang, whois), ParseMode: tgbotapi.ModeHTML, DisableWebPagePreview: true,
+					Text: ipinfo.Format(info, query, lang, whois), ParseMode: tgbotapi.ModeHTML, DisableWebPagePreview: true,
 				},
 			})
-			if info.hasCoords() {
-				title, address := venueTexts(info)
+			if info.HasCoords() {
+				title, address := ipinfo.VenueTexts(info)
 				results = append(results, map[string]any{
 					"type": "venue", "id": "location", "title": title, "address": address,
 					"latitude": *info.Lat, "longitude": *info.Lon,
@@ -146,7 +197,7 @@ func handleInline(bot *tgbotapi.BotAPI, q *tgbotapi.InlineQuery) {
 		return
 	}
 	if len(results) == 0 {
-		params.AddInterface("button", map[string]string{"text": tr(lang, "inline_hint"), "start_parameter": "help"})
+		params.AddInterface("button", map[string]string{"text": i18n.Tr(lang, "inline_hint"), "start_parameter": "help"})
 	}
 	if _, err := bot.MakeRequest("answerInlineQuery", params); err != nil {
 		log.Printf("answerInlineQuery: %v", err)
@@ -154,14 +205,14 @@ func handleInline(bot *tgbotapi.BotAPI, q *tgbotapi.InlineQuery) {
 }
 
 func setupCommands(bot *tgbotapi.BotAPI) {
-	for _, lang := range languages {
+	for _, lang := range i18n.Languages {
 		cmds := []tgbotapi.BotCommand{
-			{Command: "ip", Description: tr(lang, "cmd_ip")},
-			{Command: "help", Description: tr(lang, "cmd_help")},
-			{Command: "start", Description: tr(lang, "cmd_start")},
+			{Command: "ip", Description: i18n.Tr(lang, "cmd_ip")},
+			{Command: "help", Description: i18n.Tr(lang, "cmd_help")},
+			{Command: "start", Description: i18n.Tr(lang, "cmd_start")},
 		}
 		code := lang
-		if lang == defaultLang {
+		if lang == i18n.DefaultLang {
 			code = ""
 		}
 		cfg := tgbotapi.SetMyCommandsConfig{Commands: cmds, LanguageCode: code}

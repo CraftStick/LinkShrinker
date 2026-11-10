@@ -1,4 +1,4 @@
-package main
+package ipinfo
 
 import (
 	"encoding/json"
@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"shortener/internal/i18n"
+	"shortener/internal/whois"
 	"strconv"
 	"strings"
 	"sync"
@@ -22,7 +24,7 @@ const (
 	ipAPIFields    = "status,message,query,continent,country,countryCode,regionName,city,district,zip,timezone,isp,org,as,asname,reverse,lat,lon,mobile"
 	fallbackURL    = "https://ipwho.is/%s"
 	apiTimeout     = 5 * time.Second
-	apiReserve     = 10
+	APIReserve     = 10
 	fallbackRetry  = time.Hour
 	cacheTTL       = 5 * time.Minute
 	cacheMax       = 1000
@@ -38,20 +40,20 @@ var (
 	apiErrors = map[string]string{"private range": "err_private", "reserved range": "err_reserved", "invalid query": "err_invalid"}
 )
 
-type lookupErr struct {
+type LookupErr struct {
 	key     string
 	message string
 }
 
-func (e *lookupErr) Error() string { return e.key }
+func (e *LookupErr) Error() string { return e.key }
 
-func (e *lookupErr) text(lang string) string {
-	return tr(lang, e.key, "message", html.EscapeString(e.message))
+func (e *LookupErr) Text(lang string) string {
+	return i18n.Tr(lang, e.key, "message", html.EscapeString(e.message))
 }
 
-func (e *lookupErr) temporary() bool { return e.key == "err_rate_limit" || e.key == "err_unavailable" }
+func (e *LookupErr) temporary() bool { return e.key == "err_rate_limit" || e.key == "err_unavailable" }
 
-type ipInfo struct {
+type Info struct {
 	Status      string   `json:"status"`
 	Message     string   `json:"message"`
 	Query       string   `json:"query"`
@@ -73,12 +75,12 @@ type ipInfo struct {
 	Mobile      bool     `json:"mobile"`
 }
 
-func (i *ipInfo) hasCoords() bool { return i.Lat != nil && i.Lon != nil }
+func (i *Info) HasCoords() bool { return i.Lat != nil && i.Lon != nil }
 
 // ---------- query parsing ----------
 
-// normalizeQuery extracts an IP or an ASCII (punycode) domain from free text; "" if there is none.
-func normalizeQuery(text string) string {
+// NormalizeQuery extracts an IP or an ASCII (punycode) domain from free text; "" if there is none.
+func NormalizeQuery(text string) string {
 	q := strings.TrimSpace(text)
 	if q == "" {
 		return ""
@@ -129,11 +131,11 @@ func checkPublic(ip string) error {
 	p := net.ParseIP(ip)
 	switch {
 	case p == nil:
-		return &lookupErr{key: "err_invalid"}
+		return &LookupErr{key: "err_invalid"}
 	case p.IsPrivate() || p.IsLoopback() || p.IsLinkLocalUnicast():
-		return &lookupErr{key: "err_private"}
+		return &LookupErr{key: "err_private"}
 	case !p.IsGlobalUnicast() || inReserved(p):
-		return &lookupErr{key: "err_reserved"}
+		return &LookupErr{key: "err_reserved"}
 	}
 	return nil
 }
@@ -159,7 +161,7 @@ func inReserved(ip net.IP) bool {
 func resolve(domain string) (string, error) {
 	ips, err := net.LookupIP(domain)
 	if err != nil || len(ips) == 0 {
-		return "", &lookupErr{key: "err_invalid"}
+		return "", &LookupErr{key: "err_invalid"}
 	}
 	for _, ip := range ips {
 		if ip.To4() != nil {
@@ -202,18 +204,18 @@ var ipapiQuota, fallbackQuota quota
 
 // ---------- API calls ----------
 
-func ipapiLookup(query, lang string, reserve int) (*ipInfo, error) {
+func ipapiLookup(query, lang string, reserve int) (*Info, error) {
 	if !ipapiQuota.take(reserve) {
-		return nil, &lookupErr{key: "err_rate_limit"}
+		return nil, &LookupErr{key: "err_rate_limit"}
 	}
 	u := fmt.Sprintf(ipAPIURL, url.PathEscape(query)) + "?fields=" + ipAPIFields
-	if lang != defaultLang {
+	if lang != i18n.DefaultLang {
 		u += "&lang=" + lang
 	}
 	resp, err := apiClient.Get(u)
 	if err != nil {
 		log.Printf("ip-api request for %s failed: %v", query, err)
-		return nil, &lookupErr{key: "err_unavailable"}
+		return nil, &LookupErr{key: "err_unavailable"}
 	}
 	defer resp.Body.Close()
 	rl, err1 := strconv.Atoi(resp.Header.Get("X-Rl"))
@@ -224,28 +226,28 @@ func ipapiLookup(query, lang string, reserve int) (*ipInfo, error) {
 		ipapiQuota.update(0, time.Minute)
 	}
 	if resp.StatusCode == http.StatusTooManyRequests {
-		return nil, &lookupErr{key: "err_rate_limit"}
+		return nil, &LookupErr{key: "err_rate_limit"}
 	}
-	var info ipInfo
+	var info Info
 	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&info) != nil {
 		log.Printf("ip-api for %s: HTTP %d", query, resp.StatusCode)
-		return nil, &lookupErr{key: "err_unavailable"}
+		return nil, &LookupErr{key: "err_unavailable"}
 	}
 	if info.Status != "success" {
 		if key, ok := apiErrors[info.Message]; ok {
-			return nil, &lookupErr{key: key}
+			return nil, &LookupErr{key: key}
 		}
 		msg := info.Message
 		if msg == "" {
 			msg = "unknown error"
 		}
-		return nil, &lookupErr{key: "err_unknown", message: msg}
+		return nil, &LookupErr{key: "err_unknown", message: msg}
 	}
 	return &info, nil
 }
 
 // fallbackLookup asks ipwho.is and converts the answer to ip-api's fields.
-func fallbackLookup(query, lang string) (*ipInfo, error) {
+func fallbackLookup(query, lang string) (*Info, error) {
 	ip := query
 	if !isIP(query) {
 		var err error
@@ -257,16 +259,16 @@ func fallbackLookup(query, lang string) (*ipInfo, error) {
 		return nil, err
 	}
 	if !fallbackQuota.take(0) {
-		return nil, &lookupErr{key: "err_rate_limit"}
+		return nil, &LookupErr{key: "err_rate_limit"}
 	}
 	u := fmt.Sprintf(fallbackURL, url.PathEscape(ip))
-	if lang != defaultLang {
+	if lang != i18n.DefaultLang {
 		u += "?lang=" + lang
 	}
 	resp, err := apiClient.Get(u)
 	if err != nil {
 		log.Printf("ipwho.is request for %s failed: %v", ip, err)
-		return nil, &lookupErr{key: "err_unavailable"}
+		return nil, &LookupErr{key: "err_unavailable"}
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusTooManyRequests {
@@ -275,7 +277,7 @@ func fallbackLookup(query, lang string) (*ipInfo, error) {
 			retry = time.Duration(s) * time.Second
 		}
 		fallbackQuota.update(0, retry)
-		return nil, &lookupErr{key: "err_rate_limit"}
+		return nil, &LookupErr{key: "err_rate_limit"}
 	}
 	var d struct {
 		Success    bool                `json:"success"`
@@ -297,9 +299,9 @@ func fallbackLookup(query, lang string) (*ipInfo, error) {
 	}
 	if resp.StatusCode != http.StatusOK || json.NewDecoder(resp.Body).Decode(&d) != nil || !d.Success {
 		log.Printf("ipwho.is lookup for %s failed: HTTP %d %s", ip, resp.StatusCode, d.Message)
-		return nil, &lookupErr{key: "err_unavailable"}
+		return nil, &LookupErr{key: "err_unavailable"}
 	}
-	info := &ipInfo{Query: d.IP, Continent: d.Continent, Country: d.Country, CountryCode: d.Code, RegionName: d.Region,
+	info := &Info{Query: d.IP, Continent: d.Continent, Country: d.Country, CountryCode: d.Code, RegionName: d.Region,
 		City: d.City, Zip: d.Postal, Timezone: d.Timezone.ID, Isp: d.Connection.Isp, Org: d.Connection.Org, Lat: d.Lat, Lon: d.Lon}
 	if info.Query == "" {
 		info.Query = ip
@@ -314,7 +316,7 @@ func fallbackLookup(query, lang string) (*ipInfo, error) {
 
 type cacheEntry struct {
 	at   time.Time
-	info *ipInfo
+	info *Info
 }
 
 var (
@@ -323,7 +325,7 @@ var (
 )
 
 // getIPInfo asks ip-api.com and, when it is down or out of requests, ipwho.is. Results are cached.
-func getIPInfo(query, lang string, reserve int) (*ipInfo, error) {
+func getIPInfo(query, lang string, reserve int) (*Info, error) {
 	if isIP(query) {
 		if err := checkPublic(query); err != nil {
 			return nil, err
@@ -338,13 +340,13 @@ func getIPInfo(query, lang string, reserve int) (*ipInfo, error) {
 	}
 	info, err := ipapiLookup(query, lang, reserve)
 	if err != nil {
-		first := err.(*lookupErr)
+		first := err.(*LookupErr)
 		if !first.temporary() {
 			return nil, err
 		}
 		var ferr error
 		if info, ferr = fallbackLookup(query, lang); ferr != nil {
-			if ferr.(*lookupErr).temporary() {
+			if ferr.(*LookupErr).temporary() {
 				return nil, first
 			}
 			return nil, ferr
@@ -367,30 +369,30 @@ func getIPInfo(query, lang string, reserve int) (*ipInfo, error) {
 }
 
 // lookup returns geolocation and, for domains, WHOIS data fetched in parallel.
-func lookup(query, lang string, reserve int) (*ipInfo, *domainInfo, error) {
-	var whoisCh chan *domainInfo
+func Lookup(query, lang string, reserve int) (*Info, *whois.Info, error) {
+	var whoisCh chan *whois.Info
 	if !isIP(query) {
-		whoisCh = make(chan *domainInfo, 1)
-		go func() { whoisCh <- lookupDomain(query) }()
+		whoisCh = make(chan *whois.Info, 1)
+		go func() { whoisCh <- whois.Lookup(query) }()
 	}
 	info, err := getIPInfo(query, lang, reserve)
 	if err != nil {
 		return nil, nil, err
 	}
-	var whois *domainInfo
+	var wi *whois.Info
 	if whoisCh != nil {
 		select {
-		case whois = <-whoisCh:
+		case wi = <-whoisCh:
 		case <-time.After(whoisWait):
 			log.Printf("WHOIS for %s took too long", query)
 		}
 	}
-	return info, whois, nil
+	return info, wi, nil
 }
 
 // ---------- formatting ----------
 
-func flag(cc string) string {
+func Flag(cc string) string {
 	if len(cc) != 2 {
 		return "🏳️"
 	}
@@ -398,8 +400,8 @@ func flag(cc string) string {
 	return string([]rune{rune(cc[0]) - 'A' + 0x1F1E6, rune(cc[1]) - 'A' + 0x1F1E6})
 }
 
-// formatPlace joins non-empty, non-repeating parts (Moscow, Moscow).
-func formatPlace(i *ipInfo, withRegion bool) string {
+// FormatPlace joins non-empty, non-repeating parts (Moscow, Moscow).
+func FormatPlace(i *Info, withRegion bool) string {
 	parts := []string{i.City, i.Country}
 	if withRegion {
 		parts = []string{i.District, i.City, i.RegionName, i.Country}
@@ -440,10 +442,10 @@ func formatTimezone(name, lang string, now time.Time) string {
 	}
 	local := now.In(loc)
 	_, off := local.Zone()
-	return fmt.Sprintf("%s (%s), %s", html.EscapeString(name), formatUTCOffset(off), tr(lang, "local_time", "time", local.Format("15:04")))
+	return fmt.Sprintf("%s (%s), %s", html.EscapeString(name), formatUTCOffset(off), i18n.Tr(lang, "local_time", "time", local.Format("15:04")))
 }
 
-func formatAS(i *ipInfo) string {
+func formatAS(i *Info) string {
 	number, name, _ := strings.Cut(i.As, " ")
 	if i.AsName != "" {
 		return number + " (" + i.AsName + ")"
@@ -466,18 +468,18 @@ func formatDate(v time.Time, lang string, now time.Time) string {
 	var rel string
 	switch {
 	case days == 0:
-		rel = tr(lang, "today")
+		rel = i18n.Tr(lang, "today")
 	case days > 0:
-		rel = tr(lang, "in", "duration", formatDuration(lang, days))
+		rel = i18n.Tr(lang, "in", "duration", i18n.FormatDuration(lang, days))
 	default:
-		rel = tr(lang, "ago", "duration", formatDuration(lang, days))
+		rel = i18n.Tr(lang, "ago", "duration", i18n.FormatDuration(lang, days))
 	}
-	return fmt.Sprintf("%s (%s)", v.Format(tr(lang, "date_format")), rel)
+	return fmt.Sprintf("%s (%s)", v.Format(i18n.Tr(lang, "date_format")), rel)
 }
 
-func row(lang, key, value string) string { return "<b>" + tr(lang, key) + ":</b> " + value }
+func row(lang, key, value string) string { return "<b>" + i18n.Tr(lang, key) + ":</b> " + value }
 
-func formatWhois(w *domainInfo, query, lang string, now time.Time) []string {
+func formatWhois(w *whois.Info, query, lang string, now time.Time) []string {
 	var rows []string
 	if w.Domain != query {
 		rows = append(rows, row(lang, "domain", "<code>"+html.EscapeString(displayDomain(w.Domain))+"</code>"))
@@ -492,7 +494,7 @@ func formatWhois(w *domainInfo, query, lang string, now time.Time) []string {
 		left := daysBetween(w.Expires, now)
 		switch {
 		case left < 0:
-			rows = append(rows, "⚠️ "+row(lang, "expired", w.Expires.Format(tr(lang, "date_format"))))
+			rows = append(rows, "⚠️ "+row(lang, "expired", w.Expires.Format(i18n.Tr(lang, "date_format"))))
 		case left <= expiryWarnDays:
 			rows = append(rows, "⚠️ "+row(lang, "expires", formatDate(w.Expires, lang, now)))
 		default:
@@ -502,18 +504,18 @@ func formatWhois(w *domainInfo, query, lang string, now time.Time) []string {
 	return rows
 }
 
-func formatIPInfo(i *ipInfo, query, lang string, w *domainInfo) string {
+func Format(i *Info, query, lang string, w *whois.Info) string {
 	e := html.EscapeString
 	now := time.Now().UTC()
 	var b strings.Builder
 	if query != i.Query {
-		fmt.Fprintf(&b, "%s <b>%s</b>\n<code>%s</code>\n", flag(i.CountryCode), e(displayDomain(query)), e(i.Query))
+		fmt.Fprintf(&b, "%s <b>%s</b>\n<code>%s</code>\n", Flag(i.CountryCode), e(displayDomain(query)), e(i.Query))
 	} else {
-		fmt.Fprintf(&b, "%s <code>%s</code>\n", flag(i.CountryCode), e(i.Query))
+		fmt.Fprintf(&b, "%s <code>%s</code>\n", Flag(i.CountryCode), e(i.Query))
 	}
 	section := func(emoji, key string, rows []string) {
 		if len(rows) > 0 {
-			fmt.Fprintf(&b, "\n%s <b>%s</b>\n<blockquote>%s</blockquote>\n", emoji, tr(lang, key), strings.Join(rows, "\n"))
+			fmt.Fprintf(&b, "\n%s <b>%s</b>\n<blockquote>%s</blockquote>\n", emoji, i18n.Tr(lang, key), strings.Join(rows, "\n"))
 		}
 	}
 	add := func(rows []string, key, value string) []string {
@@ -523,7 +525,7 @@ func formatIPInfo(i *ipInfo, query, lang string, w *domainInfo) string {
 		return append(rows, row(lang, key, value))
 	}
 	var loc []string
-	if place := formatPlace(i, true); place != "" {
+	if place := FormatPlace(i, true); place != "" {
 		loc = append(loc, e(place))
 	}
 	loc = add(loc, "continent", e(i.Continent))
@@ -533,7 +535,7 @@ func formatIPInfo(i *ipInfo, query, lang string, w *domainInfo) string {
 	if i.Timezone != "" {
 		loc = add(loc, "timezone", formatTimezone(i.Timezone, lang, now))
 	}
-	if i.hasCoords() {
+	if i.HasCoords() {
 		loc = add(loc, "coords", fmt.Sprintf("<code>%v, %v</code>", *i.Lat, *i.Lon))
 	}
 	section("📍", "section_location", loc)
@@ -554,14 +556,14 @@ func formatIPInfo(i *ipInfo, query, lang string, w *domainInfo) string {
 		section("🌐", "section_whois", formatWhois(w, query, lang, now))
 	}
 	if i.Mobile {
-		fmt.Fprintf(&b, "\n<blockquote>%s</blockquote>", tr(lang, "tag_mobile"))
+		fmt.Fprintf(&b, "\n<blockquote>%s</blockquote>", i18n.Tr(lang, "tag_mobile"))
 	}
 	return b.String()
 }
 
-// venueTexts returns the map pin title and address.
-func venueTexts(i *ipInfo) (title, address string) {
-	title = formatPlace(i, true)
+// VenueTexts returns the map pin title and address.
+func VenueTexts(i *Info) (title, address string) {
+	title = FormatPlace(i, true)
 	if title == "" {
 		title = i.Query
 	}

@@ -1,4 +1,4 @@
-package main
+package i18n
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	defaultLang = "en"
+	DefaultLang = "en"
 	examples    = "<code>8.8.8.8</code>, <code>2606:4700::1111</code>, <code>google.com</code>"
 	waveEmoji   = `<tg-emoji emoji-id="5222459157084411333">👋</tg-emoji>`
 	chatEmoji   = `<tg-emoji emoji-id="5294450432532323035">💬</tg-emoji>`
@@ -141,25 +141,25 @@ var texts = map[string]map[string]string{
 	},
 }
 
-var languages = []string{"en", "ru"}
+var Languages = []string{"en", "ru"}
 
 var durationUnits = map[string]map[string][]string{
 	"en": {"year": {"year", "years"}, "month": {"month", "months"}, "day": {"day", "days"}},
 	"ru": {"year": {"год", "года", "лет"}, "month": {"месяц", "месяца", "месяцев"}, "day": {"день", "дня", "дней"}},
 }
 
-func langOf(code string) string {
+func LangOf(code string) string {
 	if strings.HasPrefix(strings.ToLower(code), "ru") {
 		return "ru"
 	}
-	return defaultLang
+	return DefaultLang
 }
 
 // tr fills {key} placeholders; {examples} is always available.
-func tr(lang, key string, params ...string) string {
+func Tr(lang, key string, params ...string) string {
 	text := texts[lang][key]
 	if text == "" {
-		text = texts[defaultLang][key]
+		text = texts[DefaultLang][key]
 	}
 	pairs := []string{"{examples}", examples}
 	for i := 0; i+1 < len(params); i += 2 {
@@ -182,7 +182,7 @@ func pluralRu(n int, forms []string) string {
 	return forms[2]
 }
 
-func formatDuration(lang string, days int) string {
+func FormatDuration(lang string, days int) string {
 	if days < 0 {
 		days = -days
 	}

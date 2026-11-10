@@ -66,6 +66,17 @@ curl -X POST http://localhost:8080/shorten \
 
 Основано на [IPBot-telegram](https://github.com/CraftStick/IPBot-telegram).
 
+## Структура проекта
+
+```
+main.go              точка входа: HTTP-сервер и запуск бота
+internal/shorten/    сокращатель ссылок: хранилище, HTTP API, редиректы
+internal/ipinfo/     поиск по IP и домену, форматирование, точка на карте
+internal/whois/      клиент RDAP и WHOIS
+internal/i18n/       тексты en/ru и вспомогательные функции
+internal/bot/        Telegram-бот: команды, меню с кнопками, инлайн-режим
+```
+
 ## Тесты
 
 ```bash

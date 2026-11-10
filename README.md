@@ -66,6 +66,17 @@ Lookup is open to everyone:
 
 Based on [IPBot-telegram](https://github.com/CraftStick/IPBot-telegram).
 
+## Project structure
+
+```
+main.go              entry point: HTTP server and bot startup
+internal/shorten/    URL shortener: storage, HTTP API, redirects
+internal/ipinfo/     IP and domain lookup, formatting, map pin
+internal/whois/      RDAP and WHOIS client
+internal/i18n/       en/ru texts and formatting helpers
+internal/bot/        Telegram bot: commands, button menu, inline mode
+```
+
 ## Test
 
 ```bash
