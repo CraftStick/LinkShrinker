@@ -14,7 +14,7 @@ const (
 
 var texts = map[string]map[string]string{
 	"en": {
-		"start": waveEmoji + " Hello, {name}!\n\nSend me a link and I'll shorten it, or use /ip with an <b>IP address</b> or a <b>domain</b> and I'll show its location, provider and more.\n\nExamples: {examples}\n\n" +
+		"start": waveEmoji + " Hello, {name}!\n\nI'm a handy toolbox: I shorten links, look up an <b>IP address</b> or a <b>domain</b> (location, provider and more) and have a little game to kill time. Pick an action below or just send me a link, an IP or a domain.\n\nExamples: {examples}\n\n" +
 			chatEmoji + " Works in any chat too: type <code>@{bot} 8.8.8.8</code>",
 		"help": "📚 <b>How to use</b>\n\n" +
 			"Send a link to get a short one, or use a command:\n\n" +
@@ -80,7 +80,7 @@ var texts = map[string]map[string]string{
 		"cancelled":        "Cancelled.",
 	},
 	"ru": {
-		"start": waveEmoji + " Привет, {name}!\n\nОтправь ссылку, и я её сократю, или используй /ip с <b>IP-адресом</b> или <b>доменом</b>, и я покажу, где он находится, кто провайдер и многое другое.\n\nПримеры: {examples}\n\n" +
+		"start": waveEmoji + " Привет, {name}!\n\nЯ набор полезных штук: сокращаю ссылки, ищу <b>IP-адрес</b> или <b>домен</b> (где находится, кто провайдер и многое другое) и есть небольшая игра, чтобы скоротать время. Выбери действие ниже или просто отправь ссылку, IP или домен.\n\nПримеры: {examples}\n\n" +
 			chatEmoji + " Работаю и в любом чате: напиши <code>@{bot} 8.8.8.8</code>",
 		"help": "📚 <b>Как пользоваться</b>\n\n" +
 			"Отправь ссылку, чтобы получить короткую, либо используй команду:\n\n" +
