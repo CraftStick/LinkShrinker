@@ -101,6 +101,9 @@ func Start(botToken string) {
 	setupCommands(bot)
 
 	for update := range updates {
+		if u := update.SentFrom(); u == nil || !allowedUsers[u.ID] {
+			continue
+		}
 		if update.InlineQuery != nil {
 			go handleInline(bot, update.InlineQuery)
 			continue
