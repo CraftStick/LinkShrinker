@@ -78,7 +78,7 @@ func TestFormatHelpers(t *testing.T) {
 		t.Error(got)
 	}
 	w := &whois.Info{Domain: "example.com", Expires: now.AddDate(0, 0, 10)}
-	if rows := formatWhois(w, "example.com", "en", now); len(rows) != 1 || !strings.HasPrefix(rows[0], "⚠️") {
+	if rows := formatWhois(w, "example.com", "en", now); len(rows) != 1 || !strings.HasPrefix(rows[0], warnIcon) {
 		t.Errorf("%v", rows)
 	}
 	if got := formatTimezone("Europe/Moscow", "en", now); got != "Europe/Moscow (UTC+3), now 15:00" {

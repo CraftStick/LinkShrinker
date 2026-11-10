@@ -8,6 +8,7 @@ import (
 	"shortener/internal/i18n"
 	"shortener/internal/ipinfo"
 	"shortener/internal/shorten"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -37,22 +38,28 @@ func takeMode(chatID int64) string {
 	return mode
 }
 
-func menuKeyboard(lang string) tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_short"), "m:short"),
-			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_ip"), "m:ip"),
-		),
-		tgbotapi.NewInlineKeyboardRow(
-			tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_game"), "m:game"),
-		),
-	)
+type button struct {
+	Text string `json:"text"`
+	Data string `json:"callback_data"`
+	Icon string `json:"icon_custom_emoji_id,omitempty"`
 }
 
-func cancelKeyboard(lang string) tgbotapi.InlineKeyboardMarkup {
-	return tgbotapi.NewInlineKeyboardMarkup(tgbotapi.NewInlineKeyboardRow(
-		tgbotapi.NewInlineKeyboardButtonData(i18n.Tr(lang, "btn_cancel"), "m:cancel"),
-	))
+type keyboard struct {
+	Rows [][]button `json:"inline_keyboard"`
+}
+
+func menuKeyboard(lang string) keyboard {
+	return keyboard{[][]button{
+		{
+			{i18n.Tr(lang, "btn_short"), "m:short", "5222255236332168190"},
+			{i18n.Tr(lang, "btn_ip"), "m:ip", ""},
+		},
+		{{i18n.Tr(lang, "btn_game"), "m:game", ""}},
+	}}
+}
+
+func cancelKeyboard(lang string) keyboard {
+	return keyboard{[][]button{{{i18n.Tr(lang, "btn_cancel"), "m:cancel", ""}}}}
 }
 
 func sendWithMarkup(bot *tgbotapi.BotAPI, chatID int64, text string, markup interface{}) {
@@ -63,11 +70,16 @@ func sendWithMarkup(bot *tgbotapi.BotAPI, chatID int64, text string, markup inte
 	bot.Send(msg)
 }
 
-func editMenu(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, text string, markup tgbotapi.InlineKeyboardMarkup) {
-	e := tgbotapi.NewEditMessageTextAndMarkup(msg.Chat.ID, msg.MessageID, text, markup)
-	e.ParseMode = tgbotapi.ModeHTML
-	e.DisableWebPagePreview = true
-	bot.Request(e)
+func editMenu(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, text string, markup keyboard) {
+	kb, _ := json.Marshal(markup)
+	bot.MakeRequest("editMessageText", tgbotapi.Params{
+		"chat_id":                  strconv.FormatInt(msg.Chat.ID, 10),
+		"message_id":               strconv.Itoa(msg.MessageID),
+		"text":                     text,
+		"parse_mode":               tgbotapi.ModeHTML,
+		"disable_web_page_preview": "true",
+		"reply_markup":             string(kb),
+	})
 }
 
 func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {

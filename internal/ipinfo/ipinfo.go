@@ -45,6 +45,11 @@ type LookupErr struct {
 	message string
 }
 
+const (
+	warnIcon = `<tg-emoji emoji-id="5276240711795107620">⚠️</tg-emoji> `
+	pinIcon  = `<tg-emoji emoji-id="5803262460626472716">📍</tg-emoji>`
+)
+
 func (e *LookupErr) Error() string { return e.key }
 
 func (e *LookupErr) Text(lang string) string {
@@ -494,9 +499,9 @@ func formatWhois(w *whois.Info, query, lang string, now time.Time) []string {
 		left := daysBetween(w.Expires, now)
 		switch {
 		case left < 0:
-			rows = append(rows, "⚠️ "+row(lang, "expired", w.Expires.Format(i18n.Tr(lang, "date_format"))))
+			rows = append(rows, warnIcon+row(lang, "expired", w.Expires.Format(i18n.Tr(lang, "date_format"))))
 		case left <= expiryWarnDays:
-			rows = append(rows, "⚠️ "+row(lang, "expires", formatDate(w.Expires, lang, now)))
+			rows = append(rows, warnIcon+row(lang, "expires", formatDate(w.Expires, lang, now)))
 		default:
 			rows = append(rows, row(lang, "expires", formatDate(w.Expires, lang, now)))
 		}
@@ -538,7 +543,7 @@ func Format(i *Info, query, lang string, w *whois.Info) string {
 	if i.HasCoords() {
 		loc = add(loc, "coords", fmt.Sprintf("<code>%v, %v</code>", *i.Lat, *i.Lon))
 	}
-	section("📍", "section_location", loc)
+	section(pinIcon, "section_location", loc)
 
 	var net []string
 	net = add(net, "isp", e(i.Isp))
