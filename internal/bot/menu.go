@@ -41,11 +41,15 @@ func takeMode(chatID int64) string {
 	return mode
 }
 
+type webApp struct {
+	URL string `json:"url"`
+}
+
 type button struct {
-	Text string `json:"text"`
-	Data string `json:"callback_data,omitempty"`
-	Icon string `json:"icon_custom_emoji_id,omitempty"`
-	URL  string `json:"url,omitempty"`
+	Text   string  `json:"text"`
+	Data   string  `json:"callback_data,omitempty"`
+	Icon   string  `json:"icon_custom_emoji_id,omitempty"`
+	WebApp *webApp `json:"web_app,omitempty"`
 }
 
 type keyboard struct {
@@ -55,15 +59,18 @@ type keyboard struct {
 func menuKeyboard(lang string) keyboard {
 	return keyboard{[][]button{
 		{
-			{i18n.Tr(lang, "btn_short"), "m:short", "5222255236332168190", ""},
-			{i18n.Tr(lang, "btn_ip"), "m:ip", "5222258908529207849", ""},
+			{i18n.Tr(lang, "btn_short"), "m:short", "5222255236332168190", nil},
+			{i18n.Tr(lang, "btn_ip"), "m:ip", "5222258908529207849", nil},
 		},
-		{{i18n.Tr(lang, "btn_game"), "m:game", "5292081728003808363", ""}, {i18n.Tr(lang, "btn_myip"), "", "", shorten.Domain + "/myip"}},
+		{
+			{i18n.Tr(lang, "btn_game"), "m:game", "5292081728003808363", nil},
+			{i18n.Tr(lang, "btn_myip"), "", "", &webApp{shorten.Domain + "/myip"}},
+		},
 	}}
 }
 
 func cancelKeyboard(lang string) keyboard {
-	return keyboard{[][]button{{{i18n.Tr(lang, "btn_cancel"), "m:cancel", "", ""}}}}
+	return keyboard{[][]button{{{i18n.Tr(lang, "btn_cancel"), "m:cancel", "", nil}}}}
 }
 
 func sendWithMarkup(bot *tgbotapi.BotAPI, chatID int64, text string, markup interface{}) {
@@ -167,7 +174,7 @@ func handleText(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 		msg.ParseMode = tgbotapi.ModeHTML
 		msg.DisableWebPagePreview = true
 		msg.ReplyToMessageID = m.MessageID
-		msg.ReplyMarkup = keyboard{[][]button{{{i18n.Tr(lang, "btn_qr"), "qr:" + short, "", ""}}}}
+		msg.ReplyMarkup = keyboard{[][]button{{{i18n.Tr(lang, "btn_qr"), "qr:" + short, "", nil}}}}
 		if _, err := bot.Send(msg); err != nil {
 			log.Printf("send: %v", err)
 		}
