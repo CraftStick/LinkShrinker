@@ -12,6 +12,8 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/skip2/go-qrcode"
+
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
@@ -88,6 +90,17 @@ func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 		return
 	}
 	chatID, lang := q.Message.Chat.ID, i18n.LangOf(q.From.LanguageCode)
+	if url, ok := strings.CutPrefix(q.Data, "qr:"); ok {
+		png, err := qrcode.Encode(url, qrcode.Medium, 512)
+		if err != nil {
+			log.Printf("qr: %v", err)
+			return
+		}
+		if _, err := bot.Send(tgbotapi.NewPhoto(chatID, tgbotapi.FileBytes{Name: "qr.png", Bytes: png})); err != nil {
+			log.Printf("qr send: %v", err)
+		}
+		return
+	}
 	switch q.Data {
 	case "m:short":
 		if !canShorten(q.From.ID, q.Message.Chat) {
@@ -143,7 +156,15 @@ func handleText(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 			sendHTML(bot, m.Chat.ID, m.MessageID, i18n.Tr(lang, "short_denied"))
 			return
 		}
-		sendHTML(bot, m.Chat.ID, m.MessageID, i18n.Tr(lang, "short_result", "url", shorten.Shorten(text)))
+		short := shorten.Shorten(text)
+		msg := tgbotapi.NewMessage(m.Chat.ID, i18n.Tr(lang, "short_result", "url", short))
+		msg.ParseMode = tgbotapi.ModeHTML
+		msg.DisableWebPagePreview = true
+		msg.ReplyToMessageID = m.MessageID
+		msg.ReplyMarkup = keyboard{[][]button{{{i18n.Tr(lang, "btn_qr"), "qr:" + short, ""}}}}
+		if _, err := bot.Send(msg); err != nil {
+			log.Printf("send: %v", err)
+		}
 	case "ip":
 		replyLookup(bot, m, lang, text)
 	default:
