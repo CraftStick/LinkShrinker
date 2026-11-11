@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	domain   = "https://tewfsd.xyz"
+	Domain   = "https://tewfsd.xyz"
 	alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
 
@@ -41,7 +41,7 @@ func Shorten(raw string) string {
 	store.Lock()
 	store.urls[id] = raw
 	store.Unlock()
-	return fmt.Sprintf("%s/%s", domain, id)
+	return fmt.Sprintf("%s/%s", Domain, id)
 }
 
 func handleShorten(w http.ResponseWriter, r *http.Request) {

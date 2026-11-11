@@ -14,10 +14,10 @@ const (
 
 var texts = map[string]map[string]string{
 	"en": {
-		"start": waveEmoji + " Hello, {name}!\n\nI'm a handy toolbox: I shorten links, look up an <b>IP address</b> or a <b>domain</b> (location, provider and more) and have a little game to kill time. Pick an action below or just send me a link, an IP or a domain.\n\nExamples: {examples}\n\n" +
+		"start": waveEmoji + " Hello, {name}!\n\nI'm a handy toolbox: I shorten links, download videos from social networks without watermarks, show your IP, look up an <b>IP address</b> or a <b>domain</b> (location, provider and more) and have a little game to kill time. Pick an action below or just send me a link, an IP or a domain.\n\nExamples: {examples}\n\n" +
 			chatEmoji + " Works in any chat too: type <code>@{bot} 8.8.8.8</code>",
 		"help": "📚 <b>How to use</b>\n\n" +
-			"Send a link to get a short one, or use a command:\n\n" +
+			"Send a link to get a short one. A video link (TikTok, Instagram, YouTube, X, VK and others) gets you the file without a watermark (up to 50 MB). The My IP button shows your own address. Commands:\n\n" +
 			"/ip <code>&lt;address&gt;</code> - look up an IP or domain\n" +
 			"/info <code>&lt;address&gt;</code> - same as /ip\n" +
 			"/start - welcome message\n" +
@@ -71,6 +71,7 @@ var texts = map[string]map[string]string{
 		"game_private":     "The game works in a private chat with the bot.",
 		"btn_cancel":       "◀️ Back",
 		"btn_qr":           "QR code",
+		"btn_myip":         "My IP",
 		"video_wait":       "⏳ Downloading the video…",
 		"video_fail":       "❌ Could not download the video: it is private, too large (over 50 MB) or the site blocked the request.",
 		"menu":             "What do you want to do? Pick an action or just send a link, an IP or a domain.",
@@ -80,10 +81,10 @@ var texts = map[string]map[string]string{
 		"short_denied":     "⛔ Link shortening is not available to you. IP and domain lookup works for everyone.",
 	},
 	"ru": {
-		"start": waveEmoji + " Привет, {name}!\n\nЯ набор полезных штук: сокращаю ссылки, ищу <b>IP-адрес</b> или <b>домен</b> (где находится, кто провайдер и многое другое) и есть небольшая игра, чтобы скоротать время. Выбери действие ниже или просто отправь ссылку, IP или домен.\n\nПримеры: {examples}\n\n" +
+		"start": waveEmoji + " Привет, {name}!\n\nЯ набор полезных штук: сокращаю ссылки, скачиваю видео из соцсетей без водяных знаков, показываю твой IP, ищу <b>IP-адрес</b> или <b>домен</b> (где находится, кто провайдер и многое другое) и есть небольшая игра, чтобы скоротать время. Выбери действие ниже или просто отправь ссылку, IP или домен.\n\nПримеры: {examples}\n\n" +
 			chatEmoji + " Работаю и в любом чате: напиши <code>@{bot} 8.8.8.8</code>",
 		"help": "📚 <b>Как пользоваться</b>\n\n" +
-			"Отправь ссылку, чтобы получить короткую, либо используй команду:\n\n" +
+			"Отправь ссылку, чтобы получить короткую. Ссылка на видео (TikTok, Instagram, YouTube, X, VK и другие) вернёт файл без водяного знака (до 50 МБ). Кнопка «Мой IP» покажет твой адрес. Команды:\n\n" +
 			"/ip <code>&lt;адрес&gt;</code> - найти IP или домен\n" +
 			"/info <code>&lt;адрес&gt;</code> - то же, что /ip\n" +
 			"/start - приветствие\n" +
@@ -137,6 +138,7 @@ var texts = map[string]map[string]string{
 		"game_private":     "Игра работает в личном чате с ботом.",
 		"btn_cancel":       "◀️ Назад",
 		"btn_qr":           "QR-код",
+		"btn_myip":         "Мой IP",
 		"video_wait":       "⏳ Скачиваю видео…",
 		"video_fail":       "❌ Не удалось скачать видео: оно закрыто, больше 50 МБ или сайт заблокировал запрос.",
 		"menu":             "Что сделать? Выбери действие или просто отправь ссылку, IP или домен.",

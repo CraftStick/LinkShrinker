@@ -2,7 +2,7 @@
 
 [English](README.md) · [Русский](README.ru.md)
 
-Swiss is a Telegram bot with a pocket set of tools in Go: URL shortener (with an HTTP API), IP and domain lookup with a map pin and WHOIS. A single binary, no database. More tools are coming.
+Swiss is a Telegram bot with a pocket set of tools in Go: URL shortener (with an HTTP API and QR codes), video downloader for social networks, IP and domain lookup with a map pin and WHOIS. A single binary, no database. More tools are coming.
 
 ## Features
 
@@ -10,8 +10,11 @@ Swiss is a Telegram bot with a pocket set of tools in Go: URL shortener (with an
 - Short links redirect with `301`
 - 6-character IDs from a cryptographically secure random source (`crypto/rand`)
 - Only users on the allow-list can shorten links in the bot
+- QR code button under every short link
+- Video download without watermarks: send a link from TikTok, Instagram, YouTube, X, VK, Facebook, Reddit, Pinterest, Twitch, Threads or Snapchat (`yt-dlp` + `ffmpeg` on the host, up to 50 MB, 720p)
+- "My IP" button: opens `/myip`, which returns to the bot with your address and shows the lookup card
 - IP and domain lookup in the bot (`/ip`, `/info`) and in inline mode, open to everyone: map pin, country with flag, region, city, ZIP, timezone with local time, ISP, organization, AS, hostname, mobile flag, domain WHOIS (registrar, dates, expiry warning), English and Russian
-- Dependencies: [telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api), `golang.org/x/net` (IDN)
+- Dependencies: [telegram-bot-api](https://github.com/go-telegram-bot-api/telegram-bot-api), `golang.org/x/net` (IDN), `skip2/go-qrcode`; `yt-dlp` and `ffmpeg` at runtime
 
 ## Getting Started
 

@@ -36,6 +36,10 @@ func handleStart(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 		return
 	}
 	lang := i18n.LangOf(m.From.LanguageCode)
+	if ip := decodeIP(strings.TrimPrefix(m.CommandArguments(), "ip_")); strings.HasPrefix(m.CommandArguments(), "ip_") && ip != "" {
+		replyLookup(bot, m, lang, ip)
+		return
+	}
 	sendWithMarkup(bot, m.Chat.ID, startText(bot, m.From, lang), menuKeyboard(lang))
 }
 
@@ -91,6 +95,7 @@ func Start(botToken string) {
 	}
 
 	bot.Debug = false
+	botName.Store(bot.Self.UserName)
 	log.Printf("Бот авторизован как %s", bot.Self.UserName)
 
 	u := tgbotapi.NewUpdate(0)

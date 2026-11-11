@@ -14,6 +14,7 @@ func main() {
 	go bot.Start(os.Getenv("BOT_TOKEN"))
 
 	mux := http.NewServeMux()
+	mux.HandleFunc("/myip", bot.MyIPHandler)
 	shorten.Register(mux)
 
 	port := ":8080"
