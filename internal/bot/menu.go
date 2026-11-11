@@ -8,6 +8,7 @@ import (
 	"shortener/internal/i18n"
 	"shortener/internal/ipinfo"
 	"shortener/internal/shorten"
+	"shortener/internal/video"
 	"strconv"
 	"strings"
 	"sync"
@@ -144,6 +145,8 @@ func handleText(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 	if mode == "" {
 		switch {
 		case text == "":
+		case video.Supported(text):
+			mode = "video"
 		case shorten.HasScheme(text):
 			mode = "short"
 		case ipinfo.NormalizeQuery(text) != "":
@@ -151,6 +154,8 @@ func handleText(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 		}
 	}
 	switch mode {
+	case "video":
+		sendVideo(bot, m, lang, text)
 	case "short":
 		if !canShorten(m.From.ID, m.Chat) {
 			sendHTML(bot, m.Chat.ID, m.MessageID, i18n.Tr(lang, "short_denied"))
@@ -174,4 +179,23 @@ func handleText(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 
 func startText(bot *tgbotapi.BotAPI, u *tgbotapi.User, lang string) string {
 	return i18n.Tr(lang, "start", "name", html.EscapeString(u.FirstName), "bot", botUsername(bot))
+}
+
+func sendVideo(bot *tgbotapi.BotAPI, m *tgbotapi.Message, lang, link string) {
+	wait, _ := bot.Send(tgbotapi.NewMessage(m.Chat.ID, i18n.Tr(lang, "video_wait")))
+	defer bot.Request(tgbotapi.NewDeleteMessage(m.Chat.ID, wait.MessageID))
+	path, cleanup, err := video.Download(link)
+	if err != nil {
+		log.Printf("video %s: %v", link, err)
+		sendHTML(bot, m.Chat.ID, m.MessageID, i18n.Tr(lang, "video_fail"))
+		return
+	}
+	defer cleanup()
+	v := tgbotapi.NewVideo(m.Chat.ID, tgbotapi.FilePath(path))
+	v.SupportsStreaming = true
+	v.ReplyToMessageID = m.MessageID
+	if _, err := bot.Send(v); err != nil {
+		log.Printf("video send: %v", err)
+		sendHTML(bot, m.Chat.ID, m.MessageID, i18n.Tr(lang, "video_fail"))
+	}
 }
