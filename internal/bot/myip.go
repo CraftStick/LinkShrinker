@@ -3,10 +3,12 @@ package bot
 import (
 	"crypto/hmac"
 	"crypto/sha256"
+	"embed"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net"
 	"net/http"
 	"net/url"
@@ -27,11 +29,25 @@ var (
 
 const myipPage = `<!doctype html><meta charset=utf-8><meta name=viewport content="width=device-width">
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
-<body style="font:16px sans-serif;text-align:center;padding:2em">...
+<script src="/myip/a/lottie.js"></script>
+<body style="margin:0;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;font:17px -apple-system,sans-serif;background:var(--tg-theme-bg-color,#fff);color:var(--tg-theme-text-color,#000)">
+<div id=g style="width:140px;height:140px"></div><p id=t>...</p>
 <script>
 const w=Telegram.WebApp;w.ready();
-fetch("/myip/check",{method:"POST",body:w.initData}).finally(()=>w.close());
+lottie.loadAnimation({container:g,path:"/myip/a/globe.json",loop:true,autoplay:true,renderer:"svg"});
+const ru=(w.initDataUnsafe.user||{}).language_code=="ru";
+t.textContent=ru?"Определяю IP…":"Detecting your IP…";
+fetch("/myip/check",{method:"POST",body:w.initData}).finally(()=>setTimeout(()=>w.close(),600));
 </script>`
+
+//go:embed myipassets
+var assets embed.FS
+
+// MyIPAssets serves the globe animation (Telegram's own TGS, unpacked) and the lottie player.
+func MyIPAssets() http.Handler {
+	sub, _ := fs.Sub(assets, "myipassets")
+	return http.StripPrefix("/myip/a/", http.FileServerFS(sub))
+}
 
 // MyIPPage serves the mini-app page opened by the "My IP" button.
 func MyIPPage(w http.ResponseWriter, r *http.Request) {

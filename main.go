@@ -15,6 +15,7 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /myip", bot.MyIPPage)
+	mux.Handle("GET /myip/a/", bot.MyIPAssets())
 	mux.HandleFunc("POST /myip/check", bot.MyIPCheck)
 	shorten.Register(mux)
 
