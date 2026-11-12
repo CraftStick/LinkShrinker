@@ -34,7 +34,7 @@ func richButton(b button) string {
 	}
 	label := html.EscapeString(b.Text)
 	if b.Icon != "" {
-		label = `<tg-emoji emoji-id="` + b.Icon + `">•</tg-emoji> ` + label
+		label = `<tg-emoji emoji-id="` + b.Icon + `">` + iconFallback[b.Icon] + `</tg-emoji> ` + label
 	}
 	return "<tg-button " + attr + ">" + label + "</tg-button>"
 }
