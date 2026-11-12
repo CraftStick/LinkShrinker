@@ -66,9 +66,6 @@ func menuKeyboard(lang string) keyboard {
 			{i18n.Tr(lang, "btn_game"), "m:game", "5292081728003808363", nil},
 			{i18n.Tr(lang, "btn_myip"), "", "", &webApp{shorten.Domain + "/myip"}},
 		},
-		{
-			{i18n.Tr(lang, "btn_trace"), "m:trace", "", nil},
-		},
 	}}
 }
 
@@ -124,9 +121,6 @@ func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 	case "m:ip":
 		setMode(chatID, "ip")
 		editMenu(bot, q.Message, i18n.Tr(lang, "ask_ip"), cancelKeyboard(lang))
-	case "m:trace":
-		setMode(chatID, "trace")
-		editMenu(bot, q.Message, i18n.Tr(lang, "ask_trace"), cancelKeyboard(lang))
 	case "m:game":
 		if q.Message.Chat.Type != "private" {
 			sendHTML(bot, chatID, 0, i18n.Tr(lang, "game_private"))
@@ -186,8 +180,6 @@ func handleText(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 		}
 	case "ip":
 		replyLookup(bot, m, lang, text)
-	case "trace":
-		handleTrace(bot, m, lang, text)
 	default:
 		sendWithMarkup(bot, m.Chat.ID, i18n.Tr(lang, "menu"), menuKeyboard(lang))
 	}
