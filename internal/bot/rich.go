@@ -14,7 +14,7 @@ import (
 )
 
 // the rich message needs a real emoji inside <tg-emoji>, "•" is rejected (RICH_MESSAGE_EMOJI_INVALID)
-var iconFallback = map[string]string{"5222255236332168190": "🔗", "5222258908529207849": "🌐", "5292081728003808363": "🎮"}
+var iconFallback = map[string]string{"5222255236332168190": "🔗", "5222258908529207849": "🌐", "5292081728003808363": "🦖"}
 
 // richButton renders one button as an in-text <tg-button> (Bot API 10.3 rich messages).
 func richButton(b button) string {
