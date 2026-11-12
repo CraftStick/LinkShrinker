@@ -44,18 +44,13 @@ type webApp struct {
 	URL string `json:"url"`
 }
 
-type copyText struct {
-	Text string `json:"text"`
-}
-
 type button struct {
-	Text   string    `json:"text"`
-	Data   string    `json:"callback_data,omitempty"`
-	Icon   string    `json:"icon_custom_emoji_id,omitempty"`
-	WebApp *webApp   `json:"web_app,omitempty"`
-	URL    string    `json:"url,omitempty"`
-	Copy   *copyText `json:"copy_text,omitempty"`
-	Style  string    `json:"style,omitempty"`
+	Text   string  `json:"text"`
+	Data   string  `json:"callback_data,omitempty"`
+	Icon   string  `json:"icon_custom_emoji_id,omitempty"`
+	WebApp *webApp `json:"web_app,omitempty"`
+	URL    string  `json:"url,omitempty"`
+	Style  string  `json:"style,omitempty"`
 }
 
 type keyboard struct {

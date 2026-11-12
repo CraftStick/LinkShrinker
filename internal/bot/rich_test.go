@@ -7,7 +7,6 @@ import (
 
 func TestRichButton(t *testing.T) {
 	cases := map[string]button{
-		`type="copy_text" text="a&amp;b"`:  {Text: "x", Copy: &copyText{"a&b"}},
 		`type="web_app" url="https://h/p"`: {Text: "x", WebApp: &webApp{"https://h/p"}},
 		`type="callback_data" data="m:ip"`: {Text: "x", Data: "m:ip"},
 		`style="primary"`:                  {Text: "x", URL: "https://h", Style: "primary"},

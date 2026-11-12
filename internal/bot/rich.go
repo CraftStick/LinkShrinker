@@ -22,8 +22,6 @@ func richButton(b button) string {
 	switch {
 	case b.WebApp != nil:
 		attr = `type="web_app" url="` + html.EscapeString(b.WebApp.URL) + `"`
-	case b.Copy != nil:
-		attr = `type="copy_text" text="` + html.EscapeString(b.Copy.Text) + `"`
 	case b.URL != "":
 		attr = `type="url" url="` + html.EscapeString(b.URL) + `"`
 	default:
@@ -76,10 +74,13 @@ func sendCard(bot *tgbotapi.BotAPI, chatID int64, replyTo int, text string, kb k
 }
 
 func lookupKeyboard(lang string, info *ipinfo.Info) keyboard {
-	row := []button{{Text: i18n.Tr(lang, "btn_copy"), Copy: &copyText{info.Query}}}
+	var row []button
 	if info.HasCoords() {
 		row = append(row, button{Text: i18n.Tr(lang, "btn_map"), Style: "primary",
 			URL: fmt.Sprintf("https://maps.google.com/?q=%f,%f", *info.Lat, *info.Lon)})
+	}
+	if len(row) == 0 {
+		return keyboard{}
 	}
 	return keyboard{[][]button{row}}
 }
