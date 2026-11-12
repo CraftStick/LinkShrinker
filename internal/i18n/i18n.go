@@ -14,7 +14,7 @@ const (
 
 var texts = map[string]map[string]string{
 	"en": {
-		"start": waveEmoji + " Hello, {name}!\n\nI'm a handy toolbox: I shorten links, download videos from social networks without watermarks, show your IP, look up an <b>IP address</b> or a <b>domain</b> (location, provider and more) and have a little game to kill time. Pick an action below or just send me a link, an IP or a domain.\n\nExamples: {examples}\n\n" +
+		"start": waveEmoji + " Hello, {name}!\n\nI shorten links, download videos without watermarks, look up an <b>IP</b> or a <b>domain</b> and show your IP. There's a game too. Pick an action or just send a link, IP or domain.\n\nExamples: {examples}\n\n" +
 			chatEmoji + " Works in any chat too: type <code>@{bot} 8.8.8.8</code>",
 		"help": "📚 <b>How to use</b>\n\n" +
 			"Send a link to get a short one. A video link (TikTok, Instagram, YouTube, X, VK and others) gets you the file without a watermark (up to 50 MB). The My IP button shows your own address. Commands:\n\n" +
@@ -82,7 +82,7 @@ var texts = map[string]map[string]string{
 		"short_denied":     "⛔ Link shortening is not available to you. IP and domain lookup works for everyone.",
 	},
 	"ru": {
-		"start": waveEmoji + " Привет, {name}!\n\nЯ набор полезных штук: сокращаю ссылки, скачиваю видео из соцсетей без водяных знаков, показываю твой IP, ищу <b>IP-адрес</b> или <b>домен</b> (где находится, кто провайдер и многое другое) и есть небольшая игра, чтобы скоротать время. Выбери действие ниже или просто отправь ссылку, IP или домен.\n\nПримеры: {examples}\n\n" +
+		"start": waveEmoji + " Привет, {name}!\n\nСокращаю ссылки, качаю видео без водяных знаков, ищу <b>IP</b> или <b>домен</b> и показываю твой IP. Есть ещё игра. Выбери действие или просто отправь ссылку, IP или домен.\n\nПримеры: {examples}\n\n" +
 			chatEmoji + " Работаю и в любом чате: напиши <code>@{bot} 8.8.8.8</code>",
 		"help": "📚 <b>Как пользоваться</b>\n\n" +
 			"Отправь ссылку, чтобы получить короткую. Ссылка на видео (TikTok, Instagram, YouTube, X, VK и другие) вернёт файл без водяного знака (до 50 МБ). Кнопка «Мой IP» покажет твой адрес. Команды:\n\n" +
