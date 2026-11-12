@@ -40,9 +40,10 @@ func richButton(b button) string {
 }
 
 // sendCard sends text with buttons inside the message (sendRichMessage).
+// Returns false if nothing was sent.
 // shortcut: falls back to a plain message with an inline keyboard if the rich method is rejected.
-func sendCard(bot *tgbotapi.BotAPI, chatID int64, replyTo int, text string, kb keyboard) {
-	body := strings.ReplaceAll(text, "\n", "<br>")
+func sendCard(bot *tgbotapi.BotAPI, chatID int64, replyTo int, text string, kb keyboard) bool {
+	body := strings.ReplaceAll(strings.TrimRight(text, "\n"), "\n", "<br>")
 	for _, row := range kb.Rows {
 		parts := make([]string, len(row))
 		for i, b := range row {
@@ -55,11 +56,11 @@ func sendCard(bot *tgbotapi.BotAPI, chatID int64, replyTo int, text string, kb k
 	if replyTo != 0 {
 		params["reply_parameters"] = fmt.Sprintf(`{"message_id":%d}`, replyTo)
 	}
-	if _, err := bot.MakeRequest("sendRichMessage", params); err == nil {
-		return
-	} else {
-		log.Printf("rich: %v", err)
+	_, err := bot.MakeRequest("sendRichMessage", params)
+	if err == nil {
+		return true
 	}
+	log.Printf("rich: %v", err)
 	msg := tgbotapi.NewMessage(chatID, text)
 	msg.ParseMode = tgbotapi.ModeHTML
 	msg.DisableWebPagePreview = true
@@ -69,7 +70,9 @@ func sendCard(bot *tgbotapi.BotAPI, chatID int64, replyTo int, text string, kb k
 	}
 	if _, err := bot.Send(msg); err != nil {
 		log.Printf("send: %v", err)
+		return false
 	}
+	return true
 }
 
 func lookupKeyboard(lang string, info *ipinfo.Info) keyboard {

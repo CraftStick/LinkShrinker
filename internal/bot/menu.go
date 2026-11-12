@@ -81,8 +81,9 @@ func cancelKeyboard(lang string) keyboard {
 
 // editMenu swaps a menu message for a new one: rich messages can't be edited, so send + delete.
 func editMenu(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, text string, markup keyboard) {
-	sendCard(bot, msg.Chat.ID, 0, text, markup)
-	bot.Request(tgbotapi.NewDeleteMessage(msg.Chat.ID, msg.MessageID))
+	if sendCard(bot, msg.Chat.ID, 0, text, markup) {
+		bot.Request(tgbotapi.NewDeleteMessage(msg.Chat.ID, msg.MessageID))
+	}
 }
 
 func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
