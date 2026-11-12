@@ -74,9 +74,6 @@ func sendCard(bot *tgbotapi.BotAPI, chatID int64, replyTo int, text string, kb k
 
 func lookupKeyboard(lang string, info *ipinfo.Info) keyboard {
 	row := []button{{Text: i18n.Tr(lang, "btn_copy"), Copy: &copyText{info.Query}}}
-	if len(info.Query) <= 60 { // callback_data limit is 64 bytes
-		row = append(row, button{Text: i18n.Tr(lang, "btn_qr"), Data: "qr:" + info.Query})
-	}
 	if info.HasCoords() {
 		row = append(row, button{Text: i18n.Tr(lang, "btn_map"), Style: "primary",
 			URL: fmt.Sprintf("https://maps.google.com/?q=%f,%f", *info.Lat, *info.Lon)})
