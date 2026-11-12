@@ -1,13 +1,9 @@
 package bot
 
 import (
-	"encoding/json"
-	"fmt"
-	"html"
 	"log"
 	"shortener/internal/i18n"
 	"shortener/internal/ipinfo"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -32,27 +28,6 @@ func sendHTML(bot *tgbotapi.BotAPI, chatID int64, replyTo int, text string) {
 	}
 }
 
-// sendRichCard sends the lookup card as a Bot API 10.3 rich message with buttons inside the text.
-// shortcut: falls back to a plain message if the rich method is rejected.
-func sendRichCard(bot *tgbotapi.BotAPI, chatID int64, replyTo int, lang, card string, info *ipinfo.Info) {
-	btns := `<tg-button type="copy_text" text="` + html.EscapeString(info.Query) + `">` + i18n.Tr(lang, "btn_copy") + `</tg-button>`
-	if len(info.Query) <= 60 { // callback_data limit is 64 bytes
-		btns += `<tg-button type="callback_data" data="qr:` + html.EscapeString(info.Query) + `">` + i18n.Tr(lang, "btn_qr") + `</tg-button>`
-	}
-	if info.HasCoords() {
-		btns += fmt.Sprintf(`<tg-button type="url" style="primary" url="https://maps.google.com/?q=%f,%f">%s</tg-button>`, *info.Lat, *info.Lon, i18n.Tr(lang, "btn_map"))
-	}
-	rich, _ := json.Marshal(map[string]string{"html": strings.ReplaceAll(card, "\n", "<br>") + `<tg-button-row>` + btns + `</tg-button-row>`})
-	params := tgbotapi.Params{"chat_id": strconv.FormatInt(chatID, 10), "rich_message": string(rich)}
-	if replyTo != 0 {
-		params["reply_parameters"] = fmt.Sprintf(`{"message_id":%d}`, replyTo)
-	}
-	if _, err := bot.MakeRequest("sendRichMessage", params); err != nil {
-		log.Printf("rich: %v", err)
-		sendHTML(bot, chatID, replyTo, card)
-	}
-}
-
 func botUsername(bot *tgbotapi.BotAPI) string { return bot.Self.UserName }
 
 func handleStart(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
@@ -61,12 +36,12 @@ func handleStart(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 		return
 	}
 	lang := i18n.LangOf(m.From.LanguageCode)
-	sendWithMarkup(bot, m.Chat.ID, startText(bot, m.From, lang), menuKeyboard(lang))
+	sendCard(bot, m.Chat.ID, 0, startText(bot, m.From, lang), menuKeyboard(lang))
 }
 
 func handleHelp(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 	lang := i18n.LangOf(m.From.LanguageCode)
-	sendWithMarkup(bot, m.Chat.ID, i18n.Tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
+	sendCard(bot, m.Chat.ID, 0, i18n.Tr(lang, "help", "bot", botUsername(bot)), menuKeyboard(lang))
 }
 
 func handleIP(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
@@ -98,11 +73,11 @@ func replyLookup(bot *tgbotapi.BotAPI, m *tgbotapi.Message, lang, args string) {
 		if _, err := bot.Send(venue); err != nil {
 			log.Printf("venue for %s: %v", query, err)
 		} else {
-			sendRichCard(bot, m.Chat.ID, 0, lang, card, info)
+			sendCard(bot, m.Chat.ID, 0, card, lookupKeyboard(lang, info))
 			return
 		}
 	}
-	sendRichCard(bot, m.Chat.ID, m.MessageID, lang, card, info)
+	sendCard(bot, m.Chat.ID, m.MessageID, card, lookupKeyboard(lang, info))
 }
 
 var allowedUsers = map[int64]bool{

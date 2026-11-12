@@ -9,7 +9,6 @@ import (
 	"shortener/internal/ipinfo"
 	"shortener/internal/shorten"
 	"shortener/internal/video"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -45,11 +44,18 @@ type webApp struct {
 	URL string `json:"url"`
 }
 
+type copyText struct {
+	Text string `json:"text"`
+}
+
 type button struct {
-	Text   string  `json:"text"`
-	Data   string  `json:"callback_data,omitempty"`
-	Icon   string  `json:"icon_custom_emoji_id,omitempty"`
-	WebApp *webApp `json:"web_app,omitempty"`
+	Text   string    `json:"text"`
+	Data   string    `json:"callback_data,omitempty"`
+	Icon   string    `json:"icon_custom_emoji_id,omitempty"`
+	WebApp *webApp   `json:"web_app,omitempty"`
+	URL    string    `json:"url,omitempty"`
+	Copy   *copyText `json:"copy_text,omitempty"`
+	Style  string    `json:"style,omitempty"`
 }
 
 type keyboard struct {
@@ -59,38 +65,24 @@ type keyboard struct {
 func menuKeyboard(lang string) keyboard {
 	return keyboard{[][]button{
 		{
-			{i18n.Tr(lang, "btn_short"), "m:short", "5222255236332168190", nil},
-			{i18n.Tr(lang, "btn_ip"), "m:ip", "5222258908529207849", nil},
+			{Text: i18n.Tr(lang, "btn_short"), Data: "m:short", Icon: "5222255236332168190"},
+			{Text: i18n.Tr(lang, "btn_ip"), Data: "m:ip", Icon: "5222258908529207849"},
 		},
 		{
-			{i18n.Tr(lang, "btn_game"), "m:game", "5292081728003808363", nil},
-			{i18n.Tr(lang, "btn_myip"), "", "", &webApp{shorten.Domain + "/myip"}},
+			{Text: i18n.Tr(lang, "btn_game"), Data: "m:game", Icon: "5292081728003808363"},
+			{Text: i18n.Tr(lang, "btn_myip"), WebApp: &webApp{shorten.Domain + "/myip"}},
 		},
 	}}
 }
 
 func cancelKeyboard(lang string) keyboard {
-	return keyboard{[][]button{{{i18n.Tr(lang, "btn_cancel"), "m:cancel", "", nil}}}}
+	return keyboard{[][]button{{{Text: i18n.Tr(lang, "btn_cancel"), Data: "m:cancel"}}}}
 }
 
-func sendWithMarkup(bot *tgbotapi.BotAPI, chatID int64, text string, markup interface{}) {
-	msg := tgbotapi.NewMessage(chatID, text)
-	msg.ParseMode = tgbotapi.ModeHTML
-	msg.DisableWebPagePreview = true
-	msg.ReplyMarkup = markup
-	bot.Send(msg)
-}
-
+// editMenu swaps a menu message for a new one: rich messages can't be edited, so send + delete.
 func editMenu(bot *tgbotapi.BotAPI, msg *tgbotapi.Message, text string, markup keyboard) {
-	kb, _ := json.Marshal(markup)
-	bot.MakeRequest("editMessageText", tgbotapi.Params{
-		"chat_id":                  strconv.FormatInt(msg.Chat.ID, 10),
-		"message_id":               strconv.Itoa(msg.MessageID),
-		"text":                     text,
-		"parse_mode":               tgbotapi.ModeHTML,
-		"disable_web_page_preview": "true",
-		"reply_markup":             string(kb),
-	})
+	sendCard(bot, msg.Chat.ID, 0, text, markup)
+	bot.Request(tgbotapi.NewDeleteMessage(msg.Chat.ID, msg.MessageID))
 }
 
 func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
@@ -134,7 +126,7 @@ func handleCallback(bot *tgbotapi.BotAPI, q *tgbotapi.CallbackQuery) {
 		}
 		bot.Request(tgbotapi.NewDeleteMessage(chatID, q.Message.MessageID))
 	case "g:back":
-		sendWithMarkup(bot, chatID, startText(bot, q.From, lang), menuKeyboard(lang))
+		sendCard(bot, chatID, 0, startText(bot, q.From, lang), menuKeyboard(lang))
 		bot.Request(tgbotapi.NewDeleteMessage(chatID, q.Message.MessageID))
 	case "m:cancel":
 		setMode(chatID, "")
@@ -170,18 +162,12 @@ func handleText(bot *tgbotapi.BotAPI, m *tgbotapi.Message) {
 			return
 		}
 		short := shorten.Shorten(text)
-		msg := tgbotapi.NewMessage(m.Chat.ID, i18n.Tr(lang, "short_result", "url", short))
-		msg.ParseMode = tgbotapi.ModeHTML
-		msg.DisableWebPagePreview = true
-		msg.ReplyToMessageID = m.MessageID
-		msg.ReplyMarkup = keyboard{[][]button{{{i18n.Tr(lang, "btn_qr"), "qr:" + short, "", nil}}}}
-		if _, err := bot.Send(msg); err != nil {
-			log.Printf("send: %v", err)
-		}
+		sendCard(bot, m.Chat.ID, m.MessageID, i18n.Tr(lang, "short_result", "url", short),
+			keyboard{[][]button{{{Text: i18n.Tr(lang, "btn_qr"), Data: "qr:" + short}}}})
 	case "ip":
 		replyLookup(bot, m, lang, text)
 	default:
-		sendWithMarkup(bot, m.Chat.ID, i18n.Tr(lang, "menu"), menuKeyboard(lang))
+		sendCard(bot, m.Chat.ID, 0, i18n.Tr(lang, "menu"), menuKeyboard(lang))
 	}
 }
 
